@@ -26,8 +26,6 @@ class MFP_User:
         
         s = requests.Session()
         [self._scrape_urls(s, url, date_list.pop()) for url in url_list[::-1]]
-        # with ThreadPoolExecutor(max_workers=10) as executor:
-        #     processes = [(executor.submit(self._scrape_urls, s, url, date_list.pop(0))) for url in url_list]
 
     def _scrape_urls(self, s, url, date):
         self.diary_html = BeautifulSoup(s.get(url).content, 'html.parser')
@@ -120,4 +118,3 @@ if __name__ == '__main__':
     print('=========================================')
     print('Done!\n')  
     print('It took', time.time()-start, 'seconds.')
-
