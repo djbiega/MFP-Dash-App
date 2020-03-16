@@ -3,6 +3,17 @@ from datetime import date, timedelta, datetime
 from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
+
+def check_username(self):
+    '''Check if the input username exists and has Diary Settings set to Public'''
+    if 'This Food Diary is Private' in self.diary_html:
+        raise ValueError("This User's Diary settings are set to private.")
+    elif 'This Username is Invalid' in self.diary_html:
+        raise ValueError('This user does not exist.')
+    else:
+        True
+    # Complete and implement this function
+
 class MFP_User:
     '''
     Represents any MyFitnessPal User and their associated nutrition data
@@ -28,6 +39,10 @@ class MFP_User:
         [self._scrape_urls(s, url, date_list.pop()) for url in url_list[::-1]]
 
     def _scrape_urls(self, s, url, date):
+        '''
+        Scrapes My Fitness Pal Website on all dates specified in the range of the input
+        start date and end date
+        '''
         self.diary_html = BeautifulSoup(s.get(url).content, 'html.parser')
         self.data['Dates'][date] = {
                                 'Items': self.get_nutrition(),
@@ -48,6 +63,7 @@ class MFP_User:
 
     # Dictionary of all the logged nutrition data for each food in the diary on the input date
     def get_nutrition(self):
+        '''Returns a dictionary of all of the nutrition values'''
         self.nutrition = {  food: {
                                 calories: cal_value, 
                                 protein: protein_value, 
@@ -69,42 +85,52 @@ class MFP_User:
         return self.nutrition
 
     def get_nutrition_html(self):
+        '''Returns the relevant html which contains all of the nutritional values'''
         return self.diary_html.find_all('tr', attrs={'class': None})
 
     def foods(self):
+        '''Returns list of all foods'''
         tr_tags = self.get_nutrition_html()
         food_tags = [food.find_all('td', attrs={'class': 'first alt'}) for food in tr_tags]
         self.items = [item.contents[0].strip() for i in range(0,len(food_tags)) for item in food_tags[i]]
         return self.items
 
     def macros(self):
+        '''Return all nutrition values for Protein, Carbs, and Fat for all foods'''
         tr_tags = self.get_nutrition_html()
         macro_tags=[tag.find_all('span', attrs={'class': 'macro-value'}) for tag in tr_tags]
         macros = [item.contents[0].replace(',','') for j in range(0,len(macro_tags)) for item in macro_tags[j]]
         return macros
 
     def protein(self):
+        '''Return protein for all foods'''
         return self.macros()[2::3]
 
     def carbs(self):
+        '''Return carbs for all foods'''
         return self.macros()[::3]
 
     def fat(self):
+        '''Return fat for all foods'''
         return self.macros()[1::3]
 
     def non_macros(self):
+        '''Return all nutrition values for everything but Protein, Carbs, and Fat for all foods'''
         tr_tags = self.get_nutrition_html()
         non_macro_tags = [tag.find_all('td', attrs={'class': None}) for tag in tr_tags]
         non_macros = [item.contents[0].replace(',','') for j in range(0,len(non_macro_tags)) for item in non_macro_tags[j]]
         return non_macros
 
     def calories(self):
+        '''Return calories for all foods'''
         return self.non_macros()[::6]
 
     def fiber(self):
+        '''Return fiber for all foods'''
         return self.non_macros()[4::6]
 
     def sugar(self):
+        '''Return sugar for all foods'''
         return self.non_macros()[5::6]
 
 
