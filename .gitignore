@@ -4,3 +4,4 @@ venv/
 .vscode/
 __pycache__/
 *.code-workspace
+*.mypy_cache/

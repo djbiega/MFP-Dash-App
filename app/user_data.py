@@ -4,14 +4,18 @@ from concurrent.futures import ThreadPoolExecutor
 from bs4 import BeautifulSoup
 
 
-def check_username(self):
+def check_username(username):
     '''Check if the input username exists and has Diary Settings set to Public'''
-    if 'This Food Diary is Private' in self.diary_html:
-        raise ValueError("This User's Diary settings are set to private.")
-    elif 'This Username is Invalid' in self.diary_html:
-        raise ValueError('This user does not exist.')
-    else:
-        True
+    url = 'https://www.myfitnesspal.com/food/diary/' + username + '?date=' + datetime.strftime(date.today(), '%Y-%m-%d')
+    s = requests.Session()
+    html = BeautifulSoup(s.get(url).content, 'html.parser')
+    try:
+        div = html.find('div', attrs={'class': 'block-1', 'p': None}).contents
+        text = [x for x in div][1].text.strip()
+        if text == 'This user maintains a private diary.' or text == 'Username ' + username + ' can not be found.':
+            return False
+    except:
+        return True
     # Complete and implement this function
 
 class MFP_User:
@@ -138,6 +142,7 @@ if __name__ == '__main__':
     import json
     import time
     start = time.time()
+    check_username('djbieg')
     user = MFP_User('djbiega2')
     print('User:' + user.username)
     print(json.dumps(user.data, indent=1))
