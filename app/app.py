@@ -16,6 +16,8 @@ import numpy as np
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
+cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
+
 app.layout = html.Div(
     children = [
         html.H4('To analyze your My fitness Pal Data, your Diary settings must be set to Public'),
@@ -52,8 +54,7 @@ app.layout = html.Div(
                 'whiteSpace': 'normal',
                 'height': 'auto'
             },
-            columns=[{'name': i, 'id': i} for i in ['Item', 'Protein', 'Carbohydrates',\
-                 'Fat', 'Fiber', 'Sugar', 'Calories']]               
+            columns=[{'name': i, 'id': i} for i in cols]               
         ),]),
         html.Div(id='hidden-data', style={'display': 'none'}),
     ])
@@ -102,38 +103,41 @@ def de_jsonify_data(jsonified_data):
 def plot_data(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate
-    try:
-        _, df_list, date_list = de_jsonify_data(jsonified_data)
-        weekly_nutrition = [
-                        {
-                            'x': date_list, 
-                            'y': [df_list[i].Protein.sum() for i in range(len(df_list))],
-                            'type': 'scatter', 'name': 'Protein'
-                        },
-                        {
-                            'x': date_list, 
-                            'y': [df_list[i].Carbohydrates.sum() for i in range(len(df_list))],
-                            'type': 'scatter', 'name': 'Carbohydrates'
-                        },
-                        {
-                            'x': date_list, 
-                            'y': [df_list[i].Fat.sum() for i in range(len(df_list))],
-                            'type': 'scatter', 'name': 'Fat'
-                        },
-                        {
-                            'x': date_list, 
-                            'y': [df_list[i].Fiber.sum() for i in range(len(df_list))],
-                            'type': 'scatter', 'name': 'Fiber'
-                        },
-                        {
-                            'x': date_list, 
-                            'y': [df_list[i].Sugar.sum() for i in range(len(df_list))],
-                            'type': 'scatter', 'name': 'Sugar'
-                        },
-                    ]
-        return {'data': weekly_nutrition}
-    except:
-        return {'data': [{'x': [0], 'y': [0], 'type': 'scatter', 'showlegend': False}]}                
+    _, df_list, date_list = de_jsonify_data(jsonified_data)
+
+    # Convert any empty DataFrames into Dataframes of 0s
+    for idx, df in enumerate(df_list):
+        if df.empty:
+            df_list[idx] = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
+
+    weekly_nutrition = [
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Protein.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 'name': 'Protein'
+                    },
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Carbohydrates.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 'name': 'Carbohydrates'
+                    },
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Fat.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 'name': 'Fat'
+                    },
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Fiber.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 'name': 'Fiber'
+                    },
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Sugar.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 'name': 'Sugar'
+                    },
+                ]
+    return {'data': weekly_nutrition}
 
 
 @app.callback(
@@ -144,8 +148,11 @@ def display_tables(jsonified_data, selected_date):
     if jsonified_data is None or selected_date is None:
         raise PreventUpdate
     datasets, _, _ = de_jsonify_data(jsonified_data)
-    df = pd.concat([pd.read_json(datasets[i], orient='split').reset_index() for i in selected_date])
-    df.rename(columns={'index': 'Item'}, inplace=True)
+    try:
+        df = pd.concat([pd.read_json(datasets[i], orient='split').reset_index() for i in selected_date])
+        df.rename(columns={'index': 'Item'}, inplace=True)
+    except:
+        df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
     return df.to_dict('records')
     
 

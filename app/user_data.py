@@ -142,7 +142,6 @@ if __name__ == '__main__':
     import json
     import time
     start = time.time()
-    check_username('djbieg')
     user = MFP_User('djbiega2')
     print('User:' + user.username)
     print(json.dumps(user.data, indent=1))
