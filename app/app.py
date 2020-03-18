@@ -13,7 +13,8 @@ import json
 import pandas as pd
 import numpy as np
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
+external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css',
+                        'https://codepen.io/chriddyp/pen/brPBPO.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
@@ -38,24 +39,34 @@ app.layout = html.Div(
         html.Div(
             children = [
                 html.H4('See Daily Breakdown'),]),
-        html.Div([
-            dcc.Graph(id='week-at-a-glance'),
-            dcc.Dropdown(
-                id='date-dropdown',
-                options=[
-                    {'label': datetime.strftime(datetime.today()-timedelta(i), '%Y-%m-%d'), 
-                    'value': datetime.strftime(datetime.today()-timedelta(i), '%Y-%m-%d')} \
-                        for i in range(7)
-                    ],
-                    multi=True),
-            dash_table.DataTable(
-            id='data-table',
-            style_data={
-                'whiteSpace': 'normal',
-                'height': 'auto'
-            },
-            columns=[{'name': i, 'id': i} for i in cols]               
-        ),]),
+        html.Div(
+            id = "display-div",
+            children = [
+                html.Div(id='test-div',children=[
+                    dcc.Graph(
+                        id='week-at-a-glance',
+                        config={
+                            'displayModeBar': False,
+                        })]),
+                html.Div([
+                    dcc.Dropdown(
+                        id='date-dropdown',
+                        options=[
+                            {'label': datetime.strftime(datetime.today()-timedelta(i), '%Y-%m-%d'), 
+                            'value': datetime.strftime(datetime.today()-timedelta(i), '%Y-%m-%d')} \
+                                for i in range(7)
+                            ],
+                            multi=True),
+                    dash_table.DataTable(
+                        id='data-table',
+                        style_data={
+                            'whiteSpace': 'normal',
+                            'height': 'auto'
+                        },
+                        columns=[{'name': i, 'id': i} for i in cols]               
+                    )])
+                ],
+            ),
         html.Div(id='hidden-data', style={'display': 'none'}),
     ])
 
@@ -137,7 +148,12 @@ def plot_data(jsonified_data):
                         'type': 'scatter', 'name': 'Sugar'
                     },
                 ]
-    return {'data': weekly_nutrition}
+    return {'data': weekly_nutrition,
+            'layout': {'title': 'Your Week at a Glance', 
+            'xaxis': 'Dates',
+            'yaxis': 'Grams',
+            'yaxis2': 'test'}
+            }
 
 
 @app.callback(

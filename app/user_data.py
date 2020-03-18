@@ -1,6 +1,6 @@
 import requests
 from datetime import date, timedelta, datetime
-from concurrent.futures import ThreadPoolExecutor
+from multiprocessing import Pool
 from bs4 import BeautifulSoup
 
 
@@ -26,9 +26,7 @@ class MFP_User:
                 date_start=datetime.strftime(date.today(), '%Y-%m-%d'), 
                 date_end=datetime.strftime(date.today()-timedelta(6), '%Y-%m-%d')):
         self.username = username
-        # Eventually replace this with a defaultdict
-        self.data = {}
-        self.data['Dates'] = {}    
+        self.data = {'Dates': {}}
     
         date_start = datetime.strptime(date_start, '%Y-%m-%d').date()
         date_end = datetime.strptime(date_end, '%Y-%m-%d').date()
@@ -37,7 +35,8 @@ class MFP_User:
         url_list = ['https://www.myfitnesspal.com/food/diary/' + self.username + 
                 '?date=' + (date_start-timedelta(days=date)).isoformat() 
                 for date in range(((date_start-date_end).days)+1)]
-        date_list = [(date_start - timedelta(days=day)).isoformat() for day in range(((date_start-date_end).days)+1)]
+        date_list = [(date_start - timedelta(days=day)).isoformat() \
+            for day in range(((date_start-date_end).days)+1)]
         
         s = requests.Session()
         [self._scrape_urls(s, url, date_list.pop()) for url in url_list[::-1]]
@@ -62,7 +61,7 @@ class MFP_User:
                                     for item in self.nutrition.keys()]),
                                 'Total Sugar': sum([int(self.nutrition[item]['Sugar'])\
                                      for item in self.nutrition.keys()])
-                                    }                        
+                                    }   
 
 
     # Dictionary of all the logged nutrition data for each food in the diary on the input date
