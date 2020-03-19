@@ -1,11 +1,12 @@
 import dash
-import dash_table
 from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
+import dash_bootstrap_components as dbc
 from dash_table import DataTable
 from dash.exceptions import PreventUpdate
 import plotly
+import plotly.graph_objects as go
 from user_data import MFP_User
 import user_data
 from datetime import date, timedelta, datetime
@@ -13,41 +14,66 @@ import json
 import pandas as pd
 import numpy as np
 
-external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css',
-                        'https://codepen.io/chriddyp/pen/brPBPO.css']
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
 
 app.layout = html.Div(
     children = [
-        html.H4('To analyze your My fitness Pal Data, your Diary settings must be set to Public'),
+        html.Div(
+            id='banner',
+            className='banner',
+            children=[
+                html.Div(
+                    id='banner-text',
+                    children=[
+                        html.H4('MyFitnessPal Weekly Dashboard'),
+                        html.H6('To access MyFitnessPal Data, Diary settings must be set to public')
+                    ],
+                ),
+            ],
+        ),
         html.Div(
             children = [
-                dcc.Input(
-                    placeholder='Enter MFP Username...',
-                    id='mfp-username', 
-                    value='', 
-                    type='text',
-                    required=True),
-                html.Button(
-                    id='button', 
-                    children='Submit',
-                    n_clicks=0),
-                html.Div(id='validate-username'),
+                dbc.Row([
+                    dbc.Col(
+                        dbc.Input(
+                            placeholder='Enter MFP Username...',
+                            id='mfp-username', 
+                            value='', 
+                            type='text',
+                            ),
+                        width = 3),
+                    dbc.Col(dbc.Button('Submit', id='submit-button')),
+                ], justify='start'),
+                dbc.Row([
+                    dbc.Col(
+                        dbc.Alert(
+                            'Invalid Username',
+                            id='dbc-validate-username',
+                            color='primary',
+                            dismissable=False,
+                            fade=False,
+                            is_open=False,
+                        ),
+                    width = 3)
+                ], justify='start'),
             ]),
         html.Div(
             children = [
                 html.H4('See Daily Breakdown'),]),
         html.Div(
-            id = "display-div",
+            id = 'display-div',
             children = [
                 html.Div(id='test-div',children=[
                     dcc.Graph(
                         id='week-at-a-glance',
                         config={
                             'displayModeBar': False,
-                        })]),
+                        },
+                        figure={}
+                        )]),
                 html.Div([
                     dcc.Dropdown(
                         id='date-dropdown',
@@ -57,7 +83,7 @@ app.layout = html.Div(
                                 for i in range(7)
                             ],
                             multi=True),
-                    dash_table.DataTable(
+                    DataTable(
                         id='data-table',
                         style_data={
                             'whiteSpace': 'normal',
@@ -71,22 +97,25 @@ app.layout = html.Div(
     ])
 
 
-@app.callback(Output('validate-username', 'children'),
-            [Input('button', 'n_clicks')],
+@app.callback([Output('dbc-validate-username', 'children'),
+            Output('dbc-validate-username', 'is_open')],
+            [Input('submit-button', 'n_clicks')],
             state=[State('mfp-username', 'value')])
 def check_username(click, username):
     if click == 0:
         raise PreventUpdate
     valid = user_data.check_username(username)
     if valid:
-        return username
-    return 'Invalid username'
+        return username, False
+    return 'Invalid Username', True
 
 
 @app.callback(Output('hidden-data', 'children'),
-            [Input('validate-username', 'children')])
+            [Input('dbc-validate-username', 'children')])
 def load_data(username):
-    if username != ("This User's Diary settings are set to private" or 'This user does not exist'):
+    if username != 'Invalid Username' and username != None:
+
+        # Scrape weekly data as a list of DataFrames
         user = MFP_User(username)
         date_list = list(user.data['Dates'].keys())        
         df_list = []
@@ -125,35 +154,61 @@ def plot_data(jsonified_data):
                     {
                         'x': date_list, 
                         'y': [df_list[i].Protein.sum() for i in range(len(df_list))],
-                        'type': 'scatter', 'name': 'Protein'
+                        'type': 'scatter', 
+                        'name': 'Protein',
+                        'line': {'color': 'D44D30'}
                     },
                     {
                         'x': date_list, 
                         'y': [df_list[i].Carbohydrates.sum() for i in range(len(df_list))],
-                        'type': 'scatter', 'name': 'Carbohydrates'
+                        'type': 'scatter', 
+                        'name': 'Carbohydrates',
+                        'line': {'color': 'D7E321'}
                     },
                     {
                         'x': date_list, 
                         'y': [df_list[i].Fat.sum() for i in range(len(df_list))],
-                        'type': 'scatter', 'name': 'Fat'
+                        'type': 'scatter', 
+                        'name': 'Fat',
+                        'line': {'color': '4F28C7'}
                     },
                     {
                         'x': date_list, 
                         'y': [df_list[i].Fiber.sum() for i in range(len(df_list))],
-                        'type': 'scatter', 'name': 'Fiber'
+                        'type': 'scatter', 
+                        'name': 'Fiber',
+                        'line': {'color': '0C8A26'}
                     },
                     {
                         'x': date_list, 
                         'y': [df_list[i].Sugar.sum() for i in range(len(df_list))],
-                        'type': 'scatter', 'name': 'Sugar'
+                        'type': 'scatter', 
+                        'name': 'Sugar',
+                        'line': {'color': 'D77BDD'}
+                    },
+                    {
+                        'x': date_list, 
+                        'y': [df_list[i].Calories.sum() for i in range(len(df_list))],
+                        'type': 'scatter', 
+                        'name': 'Calories', 
+                        'yaxis': 'y2',
+                        'line': {'color':'#000000'}
                     },
                 ]
     return {'data': weekly_nutrition,
-            'layout': {'title': 'Your Week at a Glance', 
-            'xaxis': 'Dates',
-            'yaxis': 'Grams',
-            'yaxis2': 'test'}
-            }
+            'layout': go.Layout(title='Your Week at a Glance', 
+                                yaxis={'title': 'Grams'}, 
+                                yaxis2={'title':'Calories', 
+                                        'overlaying': 'y', 
+                                        'side': 'right',
+                                        'showgrid': False},
+                                legend={'orientation': 'h',
+                                        'xanchor': 'center',
+                                        'yanchor': 'top',
+                                        'x': 0.5,
+                                        'y': 1.1},
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)')}
 
 
 @app.callback(
