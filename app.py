@@ -22,36 +22,38 @@ app = dash.Dash(__name__,
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
 app.layout = html.Div(
     [
-        dbc.Container(
+        html.Div(
             [
-                html.Div(
+                dbc.Container(
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                [
+                                    html.H2('MyFitnessPal Weekly Dashboard'), 
+                                    html.H6('To access MyFitnessPal Data, Diary settings must be set to public'),
+                                ], width=11, style={'height': '100%', 'textAlign': 'center'}
+                            ),
+                            dbc.Col(
+                                html.Img(
+                                    src=app.get_asset_url('mfp-logo.png'),
+                                    style={
+                                        'width': '65px',
+                                        'marginTop': 0,
+                                        'marginRight': 0,
+                                        'marginBottom': 0
+                                        }
+                                ), width=1, style={'height': '100%'}
+                            )
+                        ]
+                    )                
+                )
+            ]
+        ), 
+        html.Div(
+            [
+                dbc.Container(
                     [
-                        dbc.Row(
-                            [
-                                dbc.Col(
-                                    [
-                                        html.H2('MyFitnessPal Weekly Dashboard'), 
-                                        html.H6('To access MyFitnessPal Data, Diary settings must be set to public'),
-                                    ], width=11, style={'height': '100%', 'textAlign': 'center'}
-                                ),
-                                dbc.Col(
-                                    html.Img(
-                                        src=app.get_asset_url('mfp-logo.png'),
-                                        style={
-                                            'width': '65px',
-                                            'marginTop': 0,
-                                            'marginRight': 0,
-                                            'marginBottom': 0
-                                            }
-                                    ), width=1, style={'height': '100%'}
-                                )
-                            ]
-                        ),
-                    ],
-                ),
-                html.Div(
-                    [
-                        html.H6('MyFitnessPal Username', style={'marginTop': '25px'}),
+                        html.H4('MyFitnessPal User', style={'marginTop': '25px'}),
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -75,15 +77,18 @@ app.layout = html.Div(
                                         dismissable=False,
                                         fade=False,
                                         is_open=False,
-                                    ),
-                                width = 3
+                                    ), width = 3
                                 )
                             ], justify='start'
                         ),
-                    ],
-                ),
-                html.Div(
-                    [
+                    ]
+                )
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Container(
+                    [                       
                         dbc.Row(
                             [
                                 dbc.Col(
@@ -124,8 +129,12 @@ app.layout = html.Div(
                             ]
                         )
                     ]
-                ),
-                html.Div(
+                )                
+            ]
+        ),
+        html.Div(
+            [
+                dbc.Container(
                     [
                         dbc.Col(
                             [
@@ -158,14 +167,14 @@ app.layout = html.Div(
                                     columns=[{'name': i, 'id': i} for i in cols]               
                                 ),
                             ], width=12
-                        )
-                    ],
-                ),
+                        ),
+                        html.P(id='blank-space', style={'height': '50px'})
+                    ]
+                ), html.Div(id='hidden-data', style={'display': 'none'}),
             ]
-        ), html.Div(id='hidden-data', style={'display': 'none'}),
-    ], style={'backgroundColor': 'white', 'MarginBottom': '300px'}
+        )
+    ], style={'backgroundColor': 'white'}
 )
-
 
 @app.callback([Output('dbc-validate-username', 'children'),
             Output('dbc-validate-username', 'is_open')],
