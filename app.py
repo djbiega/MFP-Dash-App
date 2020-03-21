@@ -5,146 +5,165 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 from dash_table import DataTable
 from dash.exceptions import PreventUpdate
-import plotly
 import plotly.graph_objects as go
-from user_data import MFP_User
-import user_data
+
 from datetime import date, timedelta, datetime
 import json
 import pandas as pd
 import numpy as np
 
+from user_data import MFP_User
+import user_data
 
 app = dash.Dash(__name__,
                 meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
                 external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
-
-app.layout = dbc.Container(
+app.layout = html.Div(
     [
-        html.Div(
+        dbc.Container(
             [
-                dbc.Row(
+                html.Div(
                     [
-                        dbc.Col(html.H2('MyFitnessPal Weekly Dashboard'), width=9),
-                        dbc.Col(html.H2('Image'), width=3)
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.H2('MyFitnessPal Weekly Dashboard'), 
+                                        html.H6('To access MyFitnessPal Data, Diary settings must be set to public'),
+                                    ], width=11, style={'height': '100%', 'textAlign': 'center'}
+                                ),
+                                dbc.Col(
+                                    html.Img(
+                                        src=app.get_asset_url('mfp-logo.png'),
+                                        style={
+                                            'width': '65px',
+                                            'marginTop': 0,
+                                            'marginRight': 0,
+                                            'marginBottom': 0
+                                            }
+                                    ), width=1, style={'height': '100%'}
+                                )
+                            ]
+                        ),
+                    ],
+                ),
+                html.Div(
+                    [
+                        html.H6('MyFitnessPal Username', style={'marginTop': '25px'}),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Input(
+                                        placeholder='Enter MFP Username...',
+                                        id='mfp-username', 
+                                        value='', 
+                                        type='text',
+                                        ),
+                                    width = 3),
+                                dbc.Col(dbc.Button('Submit', id='submit-button')),
+                            ], justify='start'
+                        ),
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    dbc.Alert(
+                                        'Invalid Username',
+                                        id='dbc-validate-username',
+                                        color='primary',
+                                        dismissable=False,
+                                        fade=False,
+                                        is_open=False,
+                                    ),
+                                width = 3
+                                )
+                            ], justify='start'
+                        ),
+                    ],
+                ),
+                html.Div(
+                    [
+                        dbc.Row(
+                            [
+                                dbc.Col(
+                                    [
+                                        html.H4('Your Week at a Glance', style={'marginTop': 25}),
+                                            html.Div(
+                                                [
+                                                    dcc.Graph(
+                                                        id='weekly-pie-chart',
+                                                        config={'displayModeBar': False},
+                                                        figure={}
+                                                    )
+                                                ],
+                                            ),
+                                            html.Div(
+                                                [
+                                                    dcc.Graph(
+                                                        id='weekly-bar-chart',
+                                                        config={'displayModeBar': False},
+                                                        figure={}
+                                                    )
+                                                ],
+                                            )
+                                    ], width=6
+                                ),
+                                dbc.Col(
+                                    [
+                                        dbc.Container(
+                                            [
+                                                html.Div(id='calories-table'),
+                                                html.Div(id='protein-table'),
+                                                html.Div(id='carbs-table'),
+                                                html.Div(id='fat-table'),
+                                            ]
+                                        )
+                                    ], width=6, style={'marginTop': 25}
+                                )
+                            ]
+                        )
                     ]
                 ),
-                dbc.Row(
-                    dbc.Col(html.H6('To access MyFitnessPal Data, Diary settings must be set to public'), width=6)
-                ),
-            ],
-        ),
-        html.Div(
-            [
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Input(
-                                placeholder='Enter MFP Username...',
-                                id='mfp-username', 
-                                value='', 
-                                type='text',
-                                ),
-                            width = 3),
-                        dbc.Col(dbc.Button('Submit', id='submit-button')),
-                    ], justify='start'
-                ),
-                dbc.Row(
-                    [
-                        dbc.Col(
-                            dbc.Alert(
-                                'Invalid Username',
-                                id='dbc-validate-username',
-                                color='primary',
-                                dismissable=False,
-                                fade=False,
-                                is_open=False,
-                            ),
-                        width = 3
-                        )
-                    ], justify='start'
-                ),
-            ]
-        ),
-        html.Div(
-            [
-                dbc.Row(
+                html.Div(
                     [
                         dbc.Col(
                             [
-                                html.H4('Your Week at a Glance', style={'marginTop': 25}),
-                                    html.Div(
-                                        [
-                                            dcc.Graph(
-                                                id='weekly-pie-chart',
-                                                config={'displayModeBar': False},
-                                                figure={}
-                                            )
-                                        ],
-                                    ),
-                                    html.Div(
-                                        [
-                                            dcc.Graph(
-                                                id='weekly-bar-chart',
-                                                config={'displayModeBar': False},
-                                                figure={}
-                                            )
-                                        ],
-                                    )
-                            ], width=6
+                                dcc.Graph(
+                                    id='week-at-a-glance',
+                                    config={
+                                        'displayModeBar': False,
+                                    },
+                                    figure={}
+                                )
+                            ], width=12
                         ),
                         dbc.Col(
                             [
-                                html.Div(id='calories-table'),
-                                html.Div(id='protein-table'),
-                                html.Div(id='carbs-table'),
-                                html.Div(id='fat-table'),
-                            ], width=6
+                                dcc.Dropdown(
+                                    id='date-dropdown',
+                                    options=[
+                                        {
+                                            'label': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d'), 
+                                            'value': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d')
+                                        } for day in range(7)
+                                    ],
+                                    multi=True),
+                                DataTable(
+                                    id='data-table',
+                                    style_data={
+                                        'whiteSpace': 'normal',
+                                        'height': 'auto'
+                                    },
+                                    columns=[{'name': i, 'id': i} for i in cols]               
+                                ),
+                            ], width=12
                         )
-                    ]
-                )
-            ]
-        ),
-        html.Div(
-            [
-                dbc.Col(
-                    [
-                        dcc.Graph(
-                            id='week-at-a-glance',
-                            config={
-                                'displayModeBar': False,
-                            },
-                            figure={}
-                        )
-                    ], width=12
+                    ],
                 ),
-                dbc.Col(
-                    [
-                        dcc.Dropdown(
-                            id='date-dropdown',
-                            options=[
-                                {
-                                    'label': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d'), 
-                                    'value': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d')
-                                } for day in range(7)
-                            ],
-                            multi=True),
-                        DataTable(
-                            id='data-table',
-                            style_data={
-                                'whiteSpace': 'normal',
-                                'height': 'auto'
-                            },
-                            columns=[{'name': i, 'id': i} for i in cols]               
-                        )
-                    ], width=12
-                )
-            ],
-        ),
-        html.Div(id='hidden-data', style={'display': 'none'}),
-    ], style={'height': '700'}
+            ]
+        ), html.Div(id='hidden-data', style={'display': 'none'}),
+    ], style={'backgroundColor': 'white', 'MarginBottom': '300px'}
 )
 
 
@@ -260,16 +279,22 @@ def plot_data(jsonified_data):
                     }))
     fig.update_layout(
                 yaxis={'title': 'Grams'}, 
-                yaxis2={'title':'Calories', 
-                        'overlaying': 'y', 
-                        'side': 'right',
-                        'showgrid': False},
-                legend={'orientation': 'h',
-                        'xanchor': 'center',
-                        'yanchor': 'top',
-                        'x': 0.5,
-                        'y': 1.1},
+                yaxis2={
+                    'title':'Calories', 
+                    'overlaying': 'y', 
+                    'side': 'right',
+                    'showgrid': False
+                    },
+                xaxis={'showgrid': False},
+                legend={
+                    'orientation': 'h',
+                    'xanchor': 'center',
+                    'yanchor': 'top',
+                    'x': 0.5,
+                    'y': 1.1
+                    },
                 plot_bgcolor='rgba(0,0,0,0)',
+                paper_bgcolor='rgba(0,0,0,0)',
                 margin={
                     't': 50
                 })
@@ -295,14 +320,25 @@ def plot_data(jsonified_data):
         'marker_color': '#003f5c'
     }))
     fig2.update_layout(
+        legend={
+            'orientation': 'h',
+            'xanchor': 'center',
+            'yanchor': 'top',
+            'x': 0.5,
+            'y': 1.1
+            },
         showlegend=True,
         height=350,
         width=600,
         paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
         margin={
+            'l': 50, 
+            'r': 150,
             't': 0,
-            'r': 50
-            })
+            'b': 0
+            }
+    )
 
     # Add a pie chart of Protein, Carbs, Fat percentages
     fig3 = go.Figure()
@@ -311,7 +347,7 @@ def plot_data(jsonified_data):
         values=[
                 np.sum([df_list[i]['Protein'].sum()*4 for i in range(len(df_list))]),
                 np.sum([df_list[i]['Carbohydrates'].sum()*4 for i in range(len(df_list))]),    
-                np.sum([df_list[i]['Fat'].sum()*8 for i in range(len(df_list))])
+                np.sum([df_list[i]['Fat'].sum()*9 for i in range(len(df_list))])
         ], 
         textinfo='percent', 
         insidetextorientation='radial',
@@ -321,10 +357,14 @@ def plot_data(jsonified_data):
         showlegend=False,
         height=375,
         width=375,
-        margin={'l': 125, 
-                'r': 0,
-                't': 0,
-                'b': 0})
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        margin={
+            'l': 125, 
+            'r': 0,
+            't': 0,
+            'b': 0
+            })
     return fig, fig2, fig3
 
 
@@ -347,7 +387,7 @@ def display_tables(jsonified_data, selected_date):
     
 def generate_stats_tables(df, nutrient):
     table_header = [
-        html.Thead(html.Tr([html.Th('Foods Highest in %s' % nutrient), html.Th('Value')]))
+        html.Thead(html.Tr([html.Th('Foods Highest in %s' % nutrient), html.Th('Value')]), style={'textAlign': 'center'})
     ]
     
     top_3 = df.nlargest(3, nutrient)[['Item', nutrient]]
@@ -358,20 +398,20 @@ def generate_stats_tables(df, nutrient):
 
     row1 = html.Tr(
         [
-        html.Td(str(item_1.loc[:, 'Item'].item())), 
-        html.Td(str(item_1.loc[:, nutrient].item()))        
+        html.Td(str(item_1.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
+        html.Td(str(item_1.loc[:, nutrient].values[0]))      
         ]
     )
     row2 = html.Tr(
         [       
-            html.Td(str(item_2.loc[:, 'Item'].item())), 
-            html.Td(str(item_2.loc[:, nutrient].item()))
+            html.Td(str(item_2.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
+            html.Td(str(item_2.loc[:, nutrient].values[0]))
         ]
     )
     row3 = html.Tr(
         [
-            html.Td(str(item_3.loc[:, 'Item'].item())), 
-            html.Td(str(item_3.loc[:, nutrient].item()))
+            html.Td(str(item_3.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}), 
+            html.Td(str(item_3.loc[:, nutrient].values[0]))
         ]
     )
     
@@ -379,11 +419,13 @@ def generate_stats_tables(df, nutrient):
 
     return dbc.Table(
         table_header + table_body, 
-        bordered=True,
-        responsive=True)
+        responsive=True,
+        hover=True,
+        style={'width': 500, 'fontSize': '13px'}
+        )
 
 def concat_nutrition_stats_dfs(jsonified_data):
-    data, df_list, date_list = de_jsonify_data(jsonified_data)
+    _, df_list, date_list = de_jsonify_data(jsonified_data)
     try:
         df = pd.concat([(df_list[i]).reset_index() for i in range(len(date_list))])
         df.rename(columns={'index': 'Item'}, inplace=True)
