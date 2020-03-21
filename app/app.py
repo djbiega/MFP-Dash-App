@@ -74,6 +74,7 @@ app.layout = dbc.Container(
                     [
                         dbc.Col(
                             [
+                            html.H4('Your Week at a Glance', style={'marginTop': 25}),
                                 html.Div(
                                     [
                                         dcc.Graph(
@@ -100,9 +101,7 @@ app.layout = dbc.Container(
                         ),
                         dbc.Col(
                             html.Div(
-                                [
-                                    # top food by category go here
-                                ]
+                                id='nutrition-stats',
                             ), width=6
                         )
                     ]
@@ -164,8 +163,19 @@ def check_username(click, username):
 
 
 @app.callback(Output('hidden-data', 'children'),
-            [Input('dbc-validate-username', 'children')])
-def load_data(username):
+            [Input('dbc-validate-username', 'children'),
+            Input('submit-button', 'n_clicks')])
+def load_data(username, click):
+    # Load sample data when the app is loaded
+    import os
+    if not click:
+        with open('data/sampleData.txt') as file:
+            data=json.load(file)
+        date_list = list(data['Dates'].keys())
+        df_list = [pd.DataFrame(data['Dates'][date]['Items']).T for date in date_list]
+        data_jsonified = {date: df_list[idx].to_json(orient='split') for idx, date in enumerate(date_list)}
+        return json.dumps(data_jsonified)
+
     if username != 'Invalid Username' and username != None:
 
         # Scrape weekly data as a list of DataFrames
@@ -181,14 +191,14 @@ def load_data(username):
         df_list = [df_list[i].applymap(np.int64) for i in idx]
         
         # return JSON of the aggregated data
-        datasets = {date: df_list[idx].to_json(orient='split') for idx, date in enumerate(date_list)}
-        return json.dumps(datasets)
+        data = {date: df_list[idx].to_json(orient='split') for idx, date in enumerate(date_list)}
+        return json.dumps(data)
 
 def de_jsonify_data(jsonified_data):
-    datasets = json.loads(jsonified_data)
-    df_list = [pd.read_json(datasets[i], orient='split') for i in datasets.keys()]
-    date_list = list(datasets.keys())
-    return datasets, df_list, date_list
+    data = json.loads(jsonified_data)
+    date_list = list(data.keys())
+    df_list = [pd.read_json(data[i], orient='split') for i in date_list]
+    return data, df_list, date_list
 
 @app.callback(
     [Output('week-at-a-glance', 'figure'),
@@ -204,84 +214,85 @@ def plot_data(jsonified_data):
     for idx, df in enumerate(df_list):
         if df.empty:
             df_list[idx] = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
+
+    # Add a line plot of Protein, Carbs, Fat, Fiber, Sugar, Calories
     fig = go.Figure()
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Protein.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Protein',
                         'line': {'color': '#ff6361'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Carbohydrates.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Carbohydrates',
                         'line': {'color': '#ffa600'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Fat.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Fat',
                         'line': {'color': '#003f5c'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Fiber.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Fiber'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Fiber',
                         'line': {'color': '#444e86'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Sugar.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Sugar'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Sugar',
                         'line': {'color': '#dd5182'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i].Calories.sum() for i in range(len(df_list))],
+                        'y': [df_list[i]['Calories'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Calories', 
                         'yaxis': 'y2',
                         'line': {'color':'#955196'}
                     }))
     fig.update_layout(
-        title='Your Week at a Glance', 
-                                yaxis={'title': 'Grams'}, 
-                                yaxis2={'title':'Calories', 
-                                        'overlaying': 'y', 
-                                        'side': 'right',
-                                        'showgrid': False},
-                                legend={'orientation': 'h',
-                                        'xanchor': 'center',
-                                        'yanchor': 'top',
-                                        'x': 0.5,
-                                        'y': 1.1},
-                                plot_bgcolor='rgba(0,0,0,0)',
-                                margin={
-                                    't': 25
-                                }
-                                )
+                yaxis={'title': 'Grams'}, 
+                yaxis2={'title':'Calories', 
+                        'overlaying': 'y', 
+                        'side': 'right',
+                        'showgrid': False},
+                legend={'orientation': 'h',
+                        'xanchor': 'center',
+                        'yanchor': 'top',
+                        'x': 0.5,
+                        'y': 1.1},
+                plot_bgcolor='rgba(0,0,0,0)',
+                margin={
+                    't': 50
+                })
 
+    # Add a Bar plot of Protein, Carbs, Fat
     fig2 = go.Figure()
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i].Protein.sum() for i in range(len(df_list))],
+        'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
         'name': 'Protein',
         'marker_color': '#ff6361'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i].Carbohydrates.sum() for i in range(len(df_list))],
+        'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
         'name': 'Carbohydrates',
         'marker_color': '#ffa600'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i].Fat.sum() for i in range(len(df_list))],
+        'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
         'name': 'Fat',
         'marker_color': '#003f5c'
     }))
@@ -290,18 +301,21 @@ def plot_data(jsonified_data):
         height=350,
         width=600,
         paper_bgcolor='rgba(0,0,0,0)',
-        margin={'t': 0,
-                'r': 50})
+        margin={
+            't': 0,
+            'r': 50
+            })
 
+    # Add a pie chart of Protein, Carbs, Fat percentages
     fig3 = go.Figure()
     fig3.add_trace(go.Pie(
         labels=['Protein', 'Carbohydrates', 'Fat'], 
         values=[
-                np.sum([df_list[i].Protein.sum()*4 for i in range(len(df_list))]),
-                np.sum([df_list[i].Carbohydrates.sum()*4 for i in range(len(df_list))]),    
-                np.sum([df_list[i].Fat.sum()*8 for i in range(len(df_list))])
+                np.sum([df_list[i]['Protein'].sum()*4 for i in range(len(df_list))]),
+                np.sum([df_list[i]['Carbohydrates'].sum()*4 for i in range(len(df_list))]),    
+                np.sum([df_list[i]['Fat'].sum()*8 for i in range(len(df_list))])
         ], 
-        textinfo='label+percent', 
+        textinfo='percent', 
         insidetextorientation='radial',
         marker_colors=['#ff6361', '#ffa600', '#003f5c'])
     )
@@ -324,13 +338,20 @@ def display_tables(jsonified_data, selected_date):
     if jsonified_data is None or selected_date is None:
         raise PreventUpdate
     datasets, _, _ = de_jsonify_data(jsonified_data)
+    # Create the tables. If there isn't any data, return a DataFrame of all 0's
     try:
         df = pd.concat([pd.read_json(datasets[i], orient='split').reset_index() for i in selected_date])
         df.rename(columns={'index': 'Item'}, inplace=True)
     except:
         df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
-    return df.to_dict('records')
+    weekly_table = df.to_dict('records')
+    return weekly_table
     
+def generate_tables(nutrient):
+    table_header = [
+        html.Thead(html.Tr([html.Th('Foods High in %s' % nutrient), html.Th('Value')]))
+    ]
+    return table_header
 
 if __name__ == '__main__':
     app.run_server(debug=True)
