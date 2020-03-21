@@ -74,35 +74,34 @@ app.layout = dbc.Container(
                     [
                         dbc.Col(
                             [
-                            html.H4('Your Week at a Glance', style={'marginTop': 25}),
-                                html.Div(
-                                    [
-                                        dcc.Graph(
-                                            id='weekly-pie-chart',
-                                            config={
-                                                'displayModeBar': False,
-                                            },
-                                            figure={}
-                                        )
-                                    ],
-                                ),
-                                html.Div(
-                                    [
-                                        dcc.Graph(
-                                            id='weekly-bar-chart',
-                                            config={
-                                                'displayModeBar': False,
-                                            },
-                                            figure={}
-                                        )
-                                    ],
-                                )
-                            ]
+                                html.H4('Your Week at a Glance', style={'marginTop': 25}),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id='weekly-pie-chart',
+                                                config={'displayModeBar': False},
+                                                figure={}
+                                            )
+                                        ],
+                                    ),
+                                    html.Div(
+                                        [
+                                            dcc.Graph(
+                                                id='weekly-bar-chart',
+                                                config={'displayModeBar': False},
+                                                figure={}
+                                            )
+                                        ],
+                                    )
+                            ], width=6
                         ),
                         dbc.Col(
-                            html.Div(
-                                id='nutrition-stats',
-                            ), width=6
+                            [
+                                html.Div(id='calories-table'),
+                                html.Div(id='protein-table'),
+                                html.Div(id='carbs-table'),
+                                html.Div(id='fat-table'),
+                            ], width=6
                         )
                     ]
                 )
@@ -167,7 +166,6 @@ def check_username(click, username):
             Input('submit-button', 'n_clicks')])
 def load_data(username, click):
     # Load sample data when the app is loaded
-    import os
     if not click:
         with open('data/sampleData.txt') as file:
             data=json.load(file)
@@ -337,21 +335,98 @@ def plot_data(jsonified_data):
 def display_tables(jsonified_data, selected_date):
     if jsonified_data is None or selected_date is None:
         raise PreventUpdate
-    datasets, _, _ = de_jsonify_data(jsonified_data)
+    data, _, _ = de_jsonify_data(jsonified_data)
     # Create the tables. If there isn't any data, return a DataFrame of all 0's
     try:
-        df = pd.concat([pd.read_json(datasets[i], orient='split').reset_index() for i in selected_date])
+        df = pd.concat([pd.read_json(data[i], orient='split').reset_index() for i in selected_date])
         df.rename(columns={'index': 'Item'}, inplace=True)
     except:
         df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
     weekly_table = df.to_dict('records')
     return weekly_table
     
-def generate_tables(nutrient):
+def generate_stats_tables(df, nutrient):
     table_header = [
-        html.Thead(html.Tr([html.Th('Foods High in %s' % nutrient), html.Th('Value')]))
+        html.Thead(html.Tr([html.Th('Foods Highest in %s' % nutrient), html.Th('Value')]))
     ]
-    return table_header
+    
+    top_3 = df.nlargest(3, nutrient)[['Item', nutrient]]
+
+    item_1 = top_3.iloc[[0]]
+    item_2 = top_3.iloc[[1]]
+    item_3 = top_3.iloc[[2]]
+
+    row1 = html.Tr(
+        [
+        html.Td(str(item_1.loc[:, 'Item'].item())), 
+        html.Td(str(item_1.loc[:, nutrient].item()))        
+        ]
+    )
+    row2 = html.Tr(
+        [       
+            html.Td(str(item_2.loc[:, 'Item'].item())), 
+            html.Td(str(item_2.loc[:, nutrient].item()))
+        ]
+    )
+    row3 = html.Tr(
+        [
+            html.Td(str(item_3.loc[:, 'Item'].item())), 
+            html.Td(str(item_3.loc[:, nutrient].item()))
+        ]
+    )
+    
+    table_body = [html.Tbody([row1, row2, row3])]
+
+    return dbc.Table(
+        table_header + table_body, 
+        bordered=True,
+        responsive=True)
+
+def concat_nutrition_stats_dfs(jsonified_data):
+    data, df_list, date_list = de_jsonify_data(jsonified_data)
+    try:
+        df = pd.concat([(df_list[i]).reset_index() for i in range(len(date_list))])
+        df.rename(columns={'index': 'Item'}, inplace=True)
+    except:
+        df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
+    return df
+
+@app.callback(
+    Output('calories-table', 'children'),
+    [Input('hidden-data', 'children')])
+def calories_table(jsonified_data):
+    if jsonified_data is None:
+        raise PreventUpdate
+    df = concat_nutrition_stats_dfs(jsonified_data)
+    return generate_stats_tables(df, 'Calories')
+
+@app.callback(
+    Output('protein-table', 'children'),
+    [Input('hidden-data', 'children')])
+def protein_table(jsonified_data):
+    if jsonified_data is None:
+        raise PreventUpdate
+    df = concat_nutrition_stats_dfs(jsonified_data)
+    return generate_stats_tables(df, 'Protein')
+
+@app.callback(
+    Output('carbs-table', 'children'),
+    [Input('hidden-data', 'children')])
+def carbs_table(jsonified_data):
+    if jsonified_data is None:
+        raise PreventUpdate
+    df = concat_nutrition_stats_dfs(jsonified_data)
+    return generate_stats_tables(df, 'Carbohydrates')
+
+@app.callback(
+    Output('fat-table', 'children'),
+    [Input('hidden-data', 'children')])
+def fat_table(jsonified_data):
+    if jsonified_data is None:
+        raise PreventUpdate
+    df = concat_nutrition_stats_dfs(jsonified_data)
+    return generate_stats_tables(df, 'Fat')
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)

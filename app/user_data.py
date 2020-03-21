@@ -138,13 +138,11 @@ class MFP_User:
 
 if __name__ == '__main__':
     import json
-    # import time
-    # start = time.time()
+    import time
+    start = time.time()
     user = MFP_User('djbiega2', '2020-01-10', '2020-01-04')
-    # print('User:' + user.username)
-    # print(json.dumps(user.data, indent=1))
-    # print('=========================================')
-    # print('Done!\n')  
-    # print('It took', time.time()-start, 'seconds.')
-    # data = json.loads('sampleData.json')
-    # init_df_list = [pd.read_json(datasets[i], orient='split') for i in datasets.keys()]
+    print('User:' + user.username)
+    print(json.dumps(user.data, indent=1))
+    print('=========================================')
+    print('Done!\n')  
+    print('It took', time.time()-start, 'seconds.')
