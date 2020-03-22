@@ -1,8 +1,10 @@
-.pretty_container {
-    border-radius: 5px;
-    background-color: lightgray;
-    margin: 0.5rem;
+.banner {
+    border-radius: 0px;
+    background-color: white;
     padding: 1rem;
-    position: relative;
-    border: 1px solid #000000;
+    border-bottom: 1px solid grey;
   }
+
+.submit-button {
+    background-color:  #1C4E80;
+}

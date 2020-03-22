@@ -1,19 +1,21 @@
+import json
+
 import dash
-from dash.dependencies import Output, Input, State
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-from dash_table import DataTable
-from dash.exceptions import PreventUpdate
+import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 
+import user_data
+
 from datetime import date, timedelta, datetime
-import json
-import pandas as pd
-import numpy as np
+from dash.dependencies import Output, Input, State
+from dash.exceptions import PreventUpdate
+from dash_table import DataTable
 
 from user_data import MFP_User
-import user_data
 
 app = dash.Dash(__name__,
                 meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
@@ -23,6 +25,8 @@ cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
 app.layout = html.Div(
     [
         html.Div(
+            className='banner',
+            children=
             [
                 dbc.Container(
                     dbc.Row(
@@ -50,8 +54,10 @@ app.layout = html.Div(
             ]
         ), 
         html.Div(
+
             [
                 dbc.Container(
+                    children = 
                     [
                         html.H4('MyFitnessPal User', style={'marginTop': '25px'}),
                         dbc.Row(
@@ -64,7 +70,7 @@ app.layout = html.Div(
                                         type='text',
                                         ),
                                     width = 3),
-                                dbc.Col(dbc.Button('Submit', id='submit-button')),
+                                dbc.Col(dbc.Button('Submit', id='submit-button', className='submit-button')),
                             ], justify='start'
                         ),
                         dbc.Row(
@@ -98,6 +104,7 @@ app.layout = html.Div(
                                                 [
                                                     dcc.Graph(
                                                         id='weekly-pie-chart',
+                                                        className='pie-chart',
                                                         config={'displayModeBar': False},
                                                         figure={}
                                                     )
@@ -136,37 +143,65 @@ app.layout = html.Div(
             [
                 dbc.Container(
                     [
-                        dbc.Col(
-                            [
-                                dcc.Graph(
-                                    id='week-at-a-glance',
-                                    config={
-                                        'displayModeBar': False,
-                                    },
-                                    figure={}
-                                )
-                            ], width=12
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    dcc.Graph(
+                                        id='week-at-a-glance',
+                                        config={
+                                            'displayModeBar': False,
+                                        },
+                                        figure={}
+                                    )
+                                ]
+                            )
                         ),
-                        dbc.Col(
-                            [
-                                dcc.Dropdown(
-                                    id='date-dropdown',
-                                    options=[
-                                        {
-                                            'label': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d'), 
-                                            'value': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d')
-                                        } for day in range(7)
-                                    ],
-                                    multi=True),
-                                DataTable(
-                                    id='data-table',
-                                    style_data={
-                                        'whiteSpace': 'normal',
-                                        'height': 'auto'
-                                    },
-                                    columns=[{'name': i, 'id': i} for i in cols]               
-                                ),
-                            ], width=12
+                    ]
+                ),
+                dbc.Container(
+                    [
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    dcc.Dropdown(
+                                        id='date-dropdown',
+                                        options=[
+                                            {
+                                                'label': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d'), 
+                                                'value': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d')
+                                            } for day in range(7)
+                                        ],
+                                        multi=True
+                                    ),
+                                ], width=10
+                            )
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                [
+                                    DataTable(
+                                        id='data-table',
+                                        style_data={
+                                            'whiteSpace': 'normal',
+                                            'height': 'auto'
+                                        },
+                                        columns=[{'name': i, 'id': i} for i in cols],
+                                        style_as_list_view=True,
+                                        style_cell={'textAlign': 'center'},
+                                        style_header={
+                                            'backgroundColor': '#F1F1F1',
+                                            'fontWeight': 'bold'
+                                        },
+                                        style_cell_conditional=[
+                                            {
+                                                'if': {'column_id': 'Item'},
+                                                'textAlign': 'left'
+                                            }
+                                        ],
+                                        sort_action='native',
+                                    ),
+                                ], width=12, style={'marginTop': '5px'}
+                            )
                         ),
                         html.P(id='blank-space', style={'height': '50px'})
                     ]
@@ -248,35 +283,35 @@ def plot_data(jsonified_data):
                         'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Protein',
-                        'line': {'color': '#ff6361'}
+                        'line': {'color': '#1C4E80'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Carbohydrates',
-                        'line': {'color': '#ffa600'}
+                        'line': {'color': '#A5D8DD'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Fat',
-                        'line': {'color': '#003f5c'}
+                        'line': {'color': '#EA6A47'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': [df_list[i]['Fiber'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Fiber',
-                        'line': {'color': '#444e86'}
+                        'line': {'color': '#6AB187'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': [df_list[i]['Sugar'].sum() for i in range(len(df_list))],
                         'type': 'scatter', 
                         'name': 'Sugar',
-                        'line': {'color': '#dd5182'}
+                        'line': {'color': '#7E909A'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
@@ -284,7 +319,7 @@ def plot_data(jsonified_data):
                         'type': 'scatter', 
                         'name': 'Calories', 
                         'yaxis': 'y2',
-                        'line': {'color':'#955196'}
+                        'line': {'color':'#202020'}
                     }))
     fig.update_layout(
                 yaxis={'title': 'Grams'}, 
@@ -304,9 +339,9 @@ def plot_data(jsonified_data):
                     },
                 plot_bgcolor='rgba(0,0,0,0)',
                 paper_bgcolor='rgba(0,0,0,0)',
-                margin={
-                    't': 50
-                })
+                margin={'t': 50},
+                hovermode='x'
+    )
 
     # Add a Bar plot of Protein, Carbs, Fat
     fig2 = go.Figure()
@@ -314,21 +349,25 @@ def plot_data(jsonified_data):
         'x': date_list,
         'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
         'name': 'Protein',
-        'marker_color': '#ff6361'
+        'marker_color': '#1C4E80',
+        'hovertemplate': '%{y} Grams<extra></extra>'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
         'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
         'name': 'Carbohydrates',
-        'marker_color': '#ffa600'
+        'marker_color': '#A5D8DD',
+        'hovertemplate': '%{y} Grams<extra></extra>'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
         'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
         'name': 'Fat',
-        'marker_color': '#003f5c'
+        'marker_color': '#EA6A47',
+        'hovertemplate': '%{y} Grams<extra></extra>'
     }))
     fig2.update_layout(
+        yaxis={'title': 'Grams'},
         legend={
             'orientation': 'h',
             'xanchor': 'center',
@@ -336,7 +375,7 @@ def plot_data(jsonified_data):
             'x': 0.5,
             'y': 1.1
             },
-        showlegend=True,
+        showlegend=False,
         height=350,
         width=600,
         paper_bgcolor='rgba(0,0,0,0)',
@@ -346,7 +385,7 @@ def plot_data(jsonified_data):
             'r': 150,
             't': 0,
             'b': 0
-            }
+            },
     )
 
     # Add a pie chart of Protein, Carbs, Fat percentages
@@ -358,9 +397,10 @@ def plot_data(jsonified_data):
                 np.sum([df_list[i]['Carbohydrates'].sum()*4 for i in range(len(df_list))]),    
                 np.sum([df_list[i]['Fat'].sum()*9 for i in range(len(df_list))])
         ], 
-        textinfo='percent', 
+        textinfo='label+percent', 
         insidetextorientation='radial',
-        marker_colors=['#ff6361', '#ffa600', '#003f5c'])
+        hovertemplate='%{value} Calories of %{label}<extra></extra>',
+        marker_colors=['#1C4E80', '#A5D8DD', '#EA6A47'])
     )
     fig3.update_layout(
         showlegend=False,
@@ -408,19 +448,19 @@ def generate_stats_tables(df, nutrient):
     row1 = html.Tr(
         [
         html.Td(str(item_1.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
-        html.Td(str(item_1.loc[:, nutrient].values[0]))      
+        html.Td(str(item_1.loc[:, nutrient].values[0]), style={'textAlign': 'center'})      
         ]
     )
     row2 = html.Tr(
         [       
             html.Td(str(item_2.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
-            html.Td(str(item_2.loc[:, nutrient].values[0]))
+            html.Td(str(item_2.loc[:, nutrient].values[0]), style={'textAlign': 'center'})
         ]
     )
     row3 = html.Tr(
         [
             html.Td(str(item_3.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}), 
-            html.Td(str(item_3.loc[:, nutrient].values[0]))
+            html.Td(str(item_3.loc[:, nutrient].values[0]), style={'textAlign': 'center'})
         ]
     )
     
@@ -429,8 +469,7 @@ def generate_stats_tables(df, nutrient):
     return dbc.Table(
         table_header + table_body, 
         responsive=True,
-        hover=True,
-        style={'width': 500, 'fontSize': '13px'}
+        style={'width': 500, 'fontSize': '13px'},
         )
 
 def concat_nutrition_stats_dfs(jsonified_data):
