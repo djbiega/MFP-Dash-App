@@ -1,25 +1,27 @@
 import json
+from datetime import date, timedelta, datetime
 
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
+import flask
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-import user_data
-
-from datetime import date, timedelta, datetime
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 from dash_table import DataTable
 
+import user_data
 from user_data import MFP_User
 
+server = flask.Flask(__name__)
 app = dash.Dash(__name__,
-                meta_tags=[{"name": "viewport", "content": "width=device-width, initial-scale=1"}],
-                external_stylesheets=[dbc.themes.BOOTSTRAP])
+                external_stylesheets=[dbc.themes.BOOTSTRAP],
+                server=server)
+server = app.server
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
 app.layout = html.Div(
@@ -519,4 +521,4 @@ def fat_table(jsonified_data):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(host ='0.0.0.0', debug=True)
