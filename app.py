@@ -1,5 +1,6 @@
 import json
-from datetime import date, timedelta, datetime
+import os
+from datetime import timedelta, datetime
 
 import dash
 import dash_core_components as dcc
@@ -232,7 +233,9 @@ def check_username(click, username):
 def load_data(username, click):
     # Load sample data when the app is loaded
     if not click:
-        with open('data/sampleData.txt') as file:
+        THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
+        sample_data = os.path.join(THIS_FOLDER, 'data/sampleData.txt')
+        with open(sample_data) as file:
             data=json.load(file)
         date_list = list(data['Dates'].keys())
         df_list = [pd.DataFrame(data['Dates'][date]['Items']).T for date in date_list]
