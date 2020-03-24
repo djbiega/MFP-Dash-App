@@ -126,19 +126,31 @@ app.layout = html.Div(
                                     [
                                         html.H4('Your Week at a Glance', style={'marginTop': 25}),
                                             html.Div(
-                                                dcc.Graph(
-                                                    id='weekly-pie-chart',
-                                                    className='pie-chart',
-                                                    config={'displayModeBar': False},
-                                                    figure={}
-                                                )
+                                                children = [
+                                                    dcc.Loading(id='loading-pie-chart', children = [
+                                                        dcc.Graph(
+                                                            id='weekly-pie-chart',
+                                                            className='pie-chart',
+                                                            config={'displayModeBar': False},
+                                                            figure={}
+                                                        )
+                                                    ],
+                                                    type='default'
+                                                    ) 
+                                                ]
                                             ),
                                             html.Div(
-                                                dcc.Graph(
-                                                    id='weekly-bar-chart',
-                                                    config={'displayModeBar': False},
-                                                    figure={}
-                                                )
+                                                children=[
+                                                    dcc.Loading(id='loading-bar-chart', children = [
+                                                        dcc.Graph(
+                                                            id='weekly-bar-chart',
+                                                            config={'displayModeBar': False},
+                                                            figure={}
+                                                        )
+                                                    ],
+                                                    type='default'
+                                                    )
+                                                ]
                                             )
                                     ], width=6
                                 ),
@@ -146,10 +158,26 @@ app.layout = html.Div(
                                     [
                                         dbc.Container(
                                             [
-                                                html.Div(id='calories-table'),
-                                                html.Div(id='protein-table'),
-                                                html.Div(id='carbs-table'),
-                                                html.Div(id='fat-table'),
+                                                html.Div(
+                                                    children = [
+                                                        dcc.Loading(id='loading-calories-table', children = [html.Div(id='calories-table')], type='default')
+                                                    ]
+                                                ),
+                                                html.Div(
+                                                    children = [
+                                                        dcc.Loading(id='loading-protein-table', children = [html.Div(id='protein-table')], type='default')
+                                                    ]
+                                                ),
+                                                html.Div(
+                                                    children = [
+                                                        dcc.Loading(id='loading-carbs-table', children = [html.Div(id='carbs-table')], type='default')
+                                                    ]
+                                                ),
+                                                html.Div(
+                                                    children = [
+                                                        dcc.Loading(id='loading-fat-table', children = [html.Div(id='fat-table')], type='default')
+                                                    ]
+                                                )
                                             ]
                                         )
                                     ], width=6, style={'marginTop': 25}
@@ -165,12 +193,20 @@ app.layout = html.Div(
                 dbc.Container(
                     dbc.Row(
                         dbc.Col(
-                            dcc.Graph(
-                                id='week-at-a-glance',
-                                config={
-                                    'displayModeBar': False,
-                                },
-                                figure={}
+                            html.Div(
+                                children=[
+                                    dcc.Loading(id='loading-scatter-chart', children = [
+                                        dcc.Graph(
+                                            id='week-at-a-glance',
+                                            config={
+                                                'displayModeBar': False,
+                                            },
+                                            figure={}
+                                        )
+                                    ],
+                                    type='default'
+                                    )
+                                ]
                             )
                         )
                     ),
