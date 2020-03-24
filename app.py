@@ -1,6 +1,6 @@
 import json
 import os
-from datetime import timedelta, datetime
+from datetime import timedelta, datetime, date
 
 import dash
 import dash_core_components as dcc
@@ -25,6 +25,9 @@ app = dash.Dash(__name__,
 server = app.server
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
+APP_FOLDER = os.path.dirname(os.path.abspath(__file__))
+SAMPLE_DATA = os.path.join(APP_FOLDER, 'data/sampleData.txt')
+
 app.layout = html.Div(
     [
         html.Div(
@@ -57,38 +60,57 @@ app.layout = html.Div(
             ]
         ), 
         html.Div(
-
             [
                 dbc.Container(
-                    children = 
                     [
                         html.H4('MyFitnessPal User', style={'marginTop': '25px'}),
                         dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Input(
-                                        placeholder='Enter MFP Username...',
-                                        id='mfp-username', 
-                                        value='', 
-                                        type='text',
-                                        ),
-                                    width = 3),
-                                dbc.Col(dbc.Button('Submit', id='submit-button', className='submit-button')),
-                            ], justify='start'
+                            dbc.Col(
+                                dbc.Input(
+                                    placeholder='Enter MFP Username...',
+                                    id='mfp-username', 
+                                    value='', 
+                                    type='text',
+                                    className="input-field"
+                                    ),
+                            ),
                         ),
                         dbc.Row(
-                            [
-                                dbc.Col(
-                                    dbc.Alert(
-                                        'Invalid Username',
-                                        id='dbc-validate-username',
-                                        color='primary',
-                                        dismissable=False,
-                                        fade=False,
-                                        is_open=False,
-                                    ), width = 3
-                                )
-                            ], justify='start'
+                            dbc.Col(
+                                dbc.Alert(
+                                    'Invalid Username',
+                                    id='dbc-validate-username',
+                                    color='primary',
+                                    dismissable=False,
+                                    fade=False,
+                                    is_open=False,
+                                    className="input-field"
+                                ), width = 4
+                            )
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                dcc.DatePickerRange(
+                                    id='date-picker-range',
+                                    min_date_allowed=datetime(2017,1,1),
+                                    max_date_allowed=date.today(),
+                                    minimum_nights=2,
+                                    initial_visible_month=datetime(2020, 1, 1),
+                                    start_date=datetime(2020, 1, 4),
+                                    end_date=datetime(2020, 1, 10),
+                                    clearable=True
+                                ), width=4
+                            ), style={'marginTop': '10px'}
+                        ),
+                        dbc.Row(
+                            dbc.Col(
+                                dbc.Button(
+                                    'Submit', 
+                                    id='submit-button', 
+                                    className='submit-button'
+                                ), 
+                            width = 1), 
+                        style={'marginTop': '10px'}
                         ),
                     ]
                 )
@@ -104,23 +126,19 @@ app.layout = html.Div(
                                     [
                                         html.H4('Your Week at a Glance', style={'marginTop': 25}),
                                             html.Div(
-                                                [
-                                                    dcc.Graph(
-                                                        id='weekly-pie-chart',
-                                                        className='pie-chart',
-                                                        config={'displayModeBar': False},
-                                                        figure={}
-                                                    )
-                                                ],
+                                                dcc.Graph(
+                                                    id='weekly-pie-chart',
+                                                    className='pie-chart',
+                                                    config={'displayModeBar': False},
+                                                    figure={}
+                                                )
                                             ),
                                             html.Div(
-                                                [
-                                                    dcc.Graph(
-                                                        id='weekly-bar-chart',
-                                                        config={'displayModeBar': False},
-                                                        figure={}
-                                                    )
-                                                ],
+                                                dcc.Graph(
+                                                    id='weekly-bar-chart',
+                                                    config={'displayModeBar': False},
+                                                    figure={}
+                                                )
                                             )
                                     ], width=6
                                 ),
@@ -145,68 +163,53 @@ app.layout = html.Div(
         html.Div(
             [
                 dbc.Container(
-                    [
-                        dbc.Row(
-                            dbc.Col(
-                                [
-                                    dcc.Graph(
-                                        id='week-at-a-glance',
-                                        config={
-                                            'displayModeBar': False,
-                                        },
-                                        figure={}
-                                    )
-                                ]
+                    dbc.Row(
+                        dbc.Col(
+                            dcc.Graph(
+                                id='week-at-a-glance',
+                                config={
+                                    'displayModeBar': False,
+                                },
+                                figure={}
                             )
-                        ),
-                    ]
+                        )
+                    ),
                 ),
                 dbc.Container(
                     [
                         dbc.Row(
                             dbc.Col(
-                                [
-                                    dcc.Dropdown(
-                                        id='date-dropdown',
-                                        options=[
-                                            {
-                                                'label': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d'), 
-                                                'value': datetime.strftime(datetime.today()-timedelta(day), '%Y-%m-%d')
-                                            } for day in range(7)
-                                        ],
-                                        multi=True
-                                    ),
-                                ], width=10
+                                dcc.Dropdown(id='date-dropdown', multi=True),
+                                width=10
                             )
                         ),
                         dbc.Row(
                             dbc.Col(
-                                [
-                                    DataTable(
-                                        id='data-table',
-                                        style_data={
-                                            'whiteSpace': 'normal',
-                                            'height': 'auto'
-                                        },
-                                        columns=[{'name': i, 'id': i} for i in cols],
-                                        style_as_list_view=True,
-                                        style_cell={'textAlign': 'center'},
-                                        style_header={
-                                            'backgroundColor': '#F1F1F1',
-                                            'fontWeight': 'bold'
-                                        },
-                                        style_cell_conditional=[
-                                            {
-                                                'if': {'column_id': 'Item'},
-                                                'textAlign': 'left'
-                                            }
-                                        ],
-                                        sort_action='native',
-                                    ),
-                                ], width=12, style={'marginTop': '5px'}
+                                DataTable(
+                                    id='data-table',
+                                    style_data={
+                                        'whiteSpace': 'normal',
+                                        'height': 'auto'
+                                    },
+                                    columns=[{'name': i, 'id': i} for i in cols],
+                                    style_as_list_view=True,
+                                    style_cell={'textAlign': 'center'},
+                                    style_header={
+                                        'backgroundColor': '#F1F1F1',
+                                        'fontWeight': 'bold'
+                                    },
+                                    style_cell_conditional=[
+                                        {
+                                            'if': {'column_id': 'Item'},
+                                            'textAlign': 'left'
+                                        }
+                                    ],
+                                    sort_action='native',
+                                ),
+                                width=12, style={'marginTop': '5px'}
                             )
                         ),
-                        html.P(id='blank-space', style={'height': '50px'})
+                        html.P(id='blank-space', style={'height': '300px'})
                     ]
                 ), html.Div(id='hidden-data', style={'display': 'none'}),
             ]
@@ -214,12 +217,14 @@ app.layout = html.Div(
     ], style={'backgroundColor': 'white'}
 )
 
-@app.callback([Output('dbc-validate-username', 'children'),
-            Output('dbc-validate-username', 'is_open')],
-            [Input('submit-button', 'n_clicks')],
-            state=[State('mfp-username', 'value')])
+@app.callback(
+    [Output('dbc-validate-username', 'children'),
+    Output('dbc-validate-username', 'is_open')],
+    [Input('submit-button', 'n_clicks')],
+    state=[State('mfp-username', 'value')]
+)
 def check_username(click, username):
-    if click == 0:
+    if not click:
         raise PreventUpdate
     valid = user_data.check_username(username)
     if valid:
@@ -227,30 +232,37 @@ def check_username(click, username):
     return 'Invalid Username', True
 
 
-@app.callback(Output('hidden-data', 'children'),
-            [Input('dbc-validate-username', 'children'),
-            Input('submit-button', 'n_clicks')])
-def load_data(username, click):
+@app.callback(
+    Output('hidden-data', 'children'),
+    [Input('dbc-validate-username', 'children'),
+    Input('submit-button', 'n_clicks')],
+    state=[
+        State('date-picker-range', 'start_date'),
+        State('date-picker-range', 'end_date')
+    ]
+)
+def load_data(username, click, start_date, end_date):
     # Load sample data when the app is loaded
     if not click:
-        THIS_FOLDER = os.path.dirname(os.path.abspath(__file__))
-        sample_data = os.path.join(THIS_FOLDER, 'data/sampleData.txt')
-        with open(sample_data) as file:
-            data=json.load(file)
-        date_list = list(data['Dates'].keys())
-        df_list = [pd.DataFrame(data['Dates'][date]['Items']).T for date in date_list]
-        data_jsonified = {date: df_list[idx].to_json(orient='split') for idx, date in enumerate(date_list)}
-        return json.dumps(data_jsonified)
+        username = 'djbiega2'
 
     if username != 'Invalid Username' and username != None:
-
+        # Convert ISO-8601 inputs to Strings
+        start_date = datetime.strftime(
+           datetime.fromisoformat(start_date), '%Y-%m-%d'
+        )
+        end_date = datetime.strftime(
+           datetime.fromisoformat(end_date), '%Y-%m-%d'
+        )
+    
         # Scrape weekly data as a list of DataFrames
-        user = MFP_User(username)
-        date_list = list(user.data['Dates'].keys())        
+        user = MFP_User(username, start_date, end_date)
+        date_list = list(user.data['Dates'].keys())     
+
         df_list = []
         for date in date_list:
             df_list.append(pd.DataFrame.from_dict(user.data['Dates'][date]['Items'], orient='index'))
-        
+
         # Sort by Date
         idx = np.argsort(date_list)
         date_list = [date_list[i] for i in idx]
@@ -261,25 +273,33 @@ def load_data(username, click):
         return json.dumps(data)
 
 def de_jsonify_data(jsonified_data):
+    
+    def _check_for_empty_df_list(df_list):
+        # Convert any empty DataFrames into Dataframes of 0s
+        for idx, df in enumerate(df_list):
+            if df.empty:
+                df_list[idx] = pd.DataFrame([['-',0,0,0,0,0,0]], columns=cols).set_index('Item')
+        return df_list
+
     data = json.loads(jsonified_data)
     date_list = list(data.keys())
     df_list = [pd.read_json(data[i], orient='split') for i in date_list]
+    df_list = _check_for_empty_df_list(df_list)
+
     return data, df_list, date_list
+
+
 
 @app.callback(
     [Output('week-at-a-glance', 'figure'),
     Output('weekly-bar-chart', 'figure'),
     Output('weekly-pie-chart', 'figure')],
-    [Input('hidden-data', 'children')])
+    [Input('hidden-data', 'children')]
+)
 def plot_data(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate
     _, df_list, date_list = de_jsonify_data(jsonified_data)
-
-    # Convert any empty DataFrames into Dataframes of 0s
-    for idx, df in enumerate(df_list):
-        if df.empty:
-            df_list[idx] = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
 
     # Add a line plot of Protein, Carbs, Fat, Fiber, Sugar, Calories
     fig = go.Figure()
@@ -423,9 +443,38 @@ def plot_data(jsonified_data):
 
 
 @app.callback(
+    Output('date-dropdown', 'options'),
+    [Input('submit-button', 'n_clicks')],
+    state=[
+        State('date-picker-range', 'start_date'),
+        State('date-picker-range', 'end_date')
+    ]
+)
+def dropdown(click, start_date, end_date):
+    if not click:
+        raise PreventUpdate
+
+    start_date = datetime.fromisoformat(start_date)
+    end_date = datetime.fromisoformat(end_date)
+    date_range = (end_date - start_date).days + 1
+    options=[
+        {
+            'label': datetime.strftime(end_date-timedelta(day), '%Y-%m-%d'), 
+            'value': datetime.strftime(end_date-timedelta(day), '%Y-%m-%d')
+        } for day in range(date_range)
+    ]
+
+    return options
+
+
+
+
+
+@app.callback(
     Output('data-table', 'data'),
     [Input('hidden-data', 'children'),
-    Input('date-dropdown', 'value')])
+    Input('date-dropdown', 'value')]
+)
 def display_tables(jsonified_data, selected_date):
     if jsonified_data is None or selected_date is None:
         raise PreventUpdate
@@ -435,7 +484,7 @@ def display_tables(jsonified_data, selected_date):
         df = pd.concat([pd.read_json(data[i], orient='split').reset_index() for i in selected_date])
         df.rename(columns={'index': 'Item'}, inplace=True)
     except:
-        df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
+        df = pd.DataFrame([['-',0,0,0,0,0,0]], columns=cols).set_index('Item')
     weekly_table = df.to_dict('records')
     return weekly_table
     
@@ -479,16 +528,14 @@ def generate_stats_tables(df, nutrient):
 
 def concat_nutrition_stats_dfs(jsonified_data):
     _, df_list, date_list = de_jsonify_data(jsonified_data)
-    try:
-        df = pd.concat([(df_list[i]).reset_index() for i in range(len(date_list))])
-        df.rename(columns={'index': 'Item'}, inplace=True)
-    except:
-        df = pd.DataFrame([[np.nan,0,0,0,0,0,0]], columns=cols).set_index('Item')
+    df = pd.concat([(df_list[i]).reset_index() for i in range(len(date_list))])
+    df.rename(columns={'index': 'Item'}, inplace=True)
     return df
 
 @app.callback(
     Output('calories-table', 'children'),
-    [Input('hidden-data', 'children')])
+    [Input('hidden-data', 'children')]
+)
 def calories_table(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate
@@ -497,7 +544,8 @@ def calories_table(jsonified_data):
 
 @app.callback(
     Output('protein-table', 'children'),
-    [Input('hidden-data', 'children')])
+    [Input('hidden-data', 'children')]
+)
 def protein_table(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate
@@ -506,7 +554,8 @@ def protein_table(jsonified_data):
 
 @app.callback(
     Output('carbs-table', 'children'),
-    [Input('hidden-data', 'children')])
+    [Input('hidden-data', 'children')]
+)
 def carbs_table(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate
@@ -515,7 +564,8 @@ def carbs_table(jsonified_data):
 
 @app.callback(
     Output('fat-table', 'children'),
-    [Input('hidden-data', 'children')])
+    [Input('hidden-data', 'children')]
+)
 def fat_table(jsonified_data):
     if jsonified_data is None:
         raise PreventUpdate

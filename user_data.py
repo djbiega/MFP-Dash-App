@@ -5,6 +5,8 @@ from bs4 import BeautifulSoup
 
 def check_username(username):
     '''Check if the input username exists and has Diary Settings set to Public'''
+    if not username:
+        return False
     url = 'https://www.myfitnesspal.com/food/diary/' + username + '?date=' + datetime.strftime(date.today(), '%Y-%m-%d')
     s = requests.Session()
     html = BeautifulSoup(s.get(url).content, 'html.parser')
@@ -22,20 +24,20 @@ class MFP_User:
     Represents any MyFitnessPal User and their associated nutrition data
     '''
     def __init__(self, username, 
-                date_start=datetime.strftime(date.today(), '%Y-%m-%d'), 
-                date_end=datetime.strftime(date.today()-timedelta(6), '%Y-%m-%d')):
+                date_start=datetime.strftime(date.today()-timedelta(6), '%Y-%m-%d'), 
+                date_end=datetime.strftime(date.today(), '%Y-%m-%d')):
         self.username = username
         self.data = {'Dates': {}}
     
         date_start = datetime.strptime(date_start, '%Y-%m-%d').date()
         date_end = datetime.strptime(date_end, '%Y-%m-%d').date()
-        assert (date_start - date_end).days >= 0, 'date_end must be before date_start'
+        assert (date_end - date_start).days >= 0, 'date_end must be before date_start'
         
         url_list = ['https://www.myfitnesspal.com/food/diary/' + self.username + 
-                '?date=' + (date_start-timedelta(days=date)).isoformat() 
-                for date in range(((date_start-date_end).days)+1)]
-        date_list = [(date_start - timedelta(days=day)).isoformat() \
-            for day in range(((date_start-date_end).days)+1)]
+                '?date=' + (date_end-timedelta(days=date)).isoformat() 
+                for date in range(((date_end-date_start).days)+1)]
+        date_list = [(date_end - timedelta(days=day)).isoformat() \
+            for day in range(((date_end-date_start).days)+1)]
         
         s = requests.Session()
         [self._scrape_urls(s, url, date_list.pop()) for url in url_list[::-1]]
@@ -140,7 +142,7 @@ if __name__ == '__main__':
     import json
     import time
     start = time.time()
-    user = MFP_User('djbiega2', '2020-01-10', '2020-01-04')
+    user = MFP_User('djbiega2', '2020-01-04', '2020-01-10')
     print('User:' + user.username)
     print(json.dumps(user.data, indent=1))
     print('=========================================')

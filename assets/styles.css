@@ -7,4 +7,11 @@
 
 .submit-button {
     background-color:  #1C4E80;
+    height: 45px;
+    width: 100px;
+}
+
+.input-field {
+  width: 285px;
+  height: 45px;
 }
