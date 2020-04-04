@@ -1,7 +1,7 @@
 import requests
 import json
 import re
-from math import ceil
+import os
 from multiprocessing import Pool, cpu_count
 from bs4 import BeautifulSoup
 
@@ -15,9 +15,17 @@ class GroupScraper:
         self._s = requests.Session()
         self.pages = 10
         self.url_list = ['https://community.myfitnesspal.com/en/groups/browse/popular?Page=p' + \
-            str(i) + '?filter=members' for i in range(self.pages)]
+            str(i) + '?filter=members' for i in range(1, self.pages+1)]
+        self._make_data_dirs()
         self.data = {}
         self._get_groups()
+
+    def _make_data_dirs(self):
+        for i in range(1, self.pages+1):
+            try:
+                os.makedirs('data/page_' + str(i))
+            except FileExistsError:
+                pass
 
     def _get_groups(self):
         '''
@@ -26,13 +34,14 @@ class GroupScraper:
         the Group Name, Number of Members, and List of all members.
         Each group will be output to its own respective .json file.
         '''
+        page_no = 0        
         for url in self.url_list:
+            page_no+=1
             page_html = BeautifulSoup(self._s.get(url).content, 'html.parser')
             group_ids = page_html.find_all('li', attrs={'id': re.compile('Group_\d+')})
-            start = timeit.timeit()
-            scraper = GroupScraper()
-            end = timeit.timeit()
-            for group_no, g in enumerate(group_ids):
+            group_no = 1
+
+            for g in group_ids:
                 group_type = g.find_all('span', attrs={'class': re.compile('^MItem$')})[-1].contents[0].strip()
                 if group_type != 'Private Group':
                     group = g.find_all('a', attrs={'href': re.compile('^//')})[-1].contents[0].strip()
@@ -44,16 +53,16 @@ class GroupScraper:
                     
                     # Store the data in a json-friendly format
                     self.data[group] = {
+                        'Group': group,
                         'URL': members_link, 
                         'Member_Count': members_count, 
                         'Members': members
                     }
 
                     # Dump the group to its own json file
-                    self._to_json(group, group_no)
-            print('DONE!\n')
-            print('Your function took %s seconds to run' % (start-end))
-                
+                    self._to_json(group, page_no, group_no)
+                    group_no+=1
+            
     def _get_members(self, group, members_count, members_link):
         '''
         Return all usernames from the input group
@@ -66,9 +75,8 @@ class GroupScraper:
         outputs: 
             member_list (list): list of strings of all members in the group
         '''
-        page_count = ceil(int(members_count) / 30)
-        # page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, page_count)]
-        page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, 3)]
+        page_count = int(members_count) // 30
+        page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, page_count+1)]
 
         with Pool(cpu_count()-1) as p:
             member_list = p.map(self._get_members_on_page, page_list)
@@ -94,21 +102,21 @@ class GroupScraper:
             pass
         return member_list
 
-    def _to_json(self, group, group_no):
+    def _to_json(self, group, page_no, group_no):
         '''
         Dump input group data into a .json file
         inputs:
             group (Dict): Dictionary of MyFitnessPal Groups
             group_no (int): Index term used for tracking groups
         '''
-        with open('group_' + str(group_no) +'.json', 'w') as f:
+        with open('data/page_%s/group_%s.json' % (str(page_no), str(group_no)), 'w') as f:
             json.dump(self.data[group], f, indent=4)
 
 
 if __name__ == '__main__':
-    import timeit
-    start = timeit.timeit()
+    import time
+    start = time.time()
     scraper = GroupScraper()
-    end = timeit.timeit()
+    end = time.time()
     print('DONE!\n')
-    print('Your function took %s seconds to run' % (start-end))
+    print('Your function took %s seconds to run' % (end-start))
