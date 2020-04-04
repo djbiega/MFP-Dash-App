@@ -17,7 +17,6 @@ def check_username(username):
             return False
     except:
         return True
-    # Complete and implement this function
 
 class MFP_User:
     '''
@@ -48,22 +47,7 @@ class MFP_User:
         start date and end date
         '''
         self.diary_html = BeautifulSoup(s.get(url).content, 'html.parser')
-        self.data['Dates'][date] = {
-                                'Items': self.get_nutrition(),
-                                'Total Calories': sum([int(self.nutrition[item]['Calories'])\
-                                    for item in self.nutrition.keys()]),
-                                'Total Protein': sum([int(self.nutrition[item]['Protein'])\
-                                    for item in self.nutrition.keys()]),
-                                'Total Carbohydrates': sum([int(self.nutrition[item]['Carbohydrates'])\
-                                    for item in self.nutrition.keys()]),
-                                'Total Fat': sum([int(self.nutrition[item]['Fat'])\
-                                    for item in self.nutrition.keys()]),
-                                'Total Fiber': sum([int(self.nutrition[item]['Fiber'])\
-                                    for item in self.nutrition.keys()]),
-                                'Total Sugar': sum([int(self.nutrition[item]['Sugar'])\
-                                     for item in self.nutrition.keys()])
-                                    }   
-
+        self.data['Dates'][date] = {'Items': self.get_nutrition()}   
 
     # Dictionary of all the logged nutrition data for each food in the diary on the input date
     def get_nutrition(self):
