@@ -29,7 +29,9 @@ class GroupScraper:
         for url in self.url_list:
             page_html = BeautifulSoup(self._s.get(url).content, 'html.parser')
             group_ids = page_html.find_all('li', attrs={'id': re.compile('Group_\d+')})
-            
+            start = timeit.timeit()
+            scraper = GroupScraper()
+            end = timeit.timeit()
             for group_no, g in enumerate(group_ids):
                 group_type = g.find_all('span', attrs={'class': re.compile('^MItem$')})[-1].contents[0].strip()
                 if group_type != 'Private Group':
@@ -49,6 +51,8 @@ class GroupScraper:
 
                     # Dump the group to its own json file
                     self._to_json(group, group_no)
+            print('DONE!\n')
+            print('Your function took %s seconds to run' % (start-end))
                 
     def _get_members(self, group, members_count, members_link):
         '''
@@ -63,7 +67,8 @@ class GroupScraper:
             member_list (list): list of strings of all members in the group
         '''
         page_count = ceil(int(members_count) / 30)
-        page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, page_count)]
+        # page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, page_count)]
+        page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, 3)]
 
         with Pool(cpu_count()-1) as p:
             member_list = p.map(self._get_members_on_page, page_list)
@@ -101,5 +106,9 @@ class GroupScraper:
 
 
 if __name__ == '__main__':
+    import timeit
+    start = timeit.timeit()
     scraper = GroupScraper()
-    print('DONE!')
+    end = timeit.timeit()
+    print('DONE!\n')
+    print('Your function took %s seconds to run' % (start-end))
