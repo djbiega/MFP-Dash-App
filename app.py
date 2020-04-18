@@ -1,7 +1,5 @@
 import json
 import os
-from datetime import timedelta, datetime, date
-
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -11,12 +9,13 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+from datetime import timedelta, datetime, date
 from dash.dependencies import Output, Input, State
 from dash.exceptions import PreventUpdate
 from dash_table import DataTable
 
-import user_data
-from user_data import MFP_User
+from webscraper import only_public_profiles
+from webscraper.user_data import MFP_User
 
 server = flask.Flask(__name__)
 app = dash.Dash(__name__,
@@ -25,8 +24,6 @@ app = dash.Dash(__name__,
 server = app.server
 
 cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
-APP_FOLDER = os.path.dirname(os.path.abspath(__file__))
-SAMPLE_DATA = os.path.join(APP_FOLDER, 'data/sampleData.txt')
 
 app.layout = html.Div(
     [
@@ -262,7 +259,9 @@ app.layout = html.Div(
 def check_username(click, username):
     if not click:
         raise PreventUpdate
-    valid = user_data.check_username(username)
+    print(username)
+    valid = only_public_profiles.check_username(username)
+    print(valid)
     if valid:
         return username, False
     return 'Invalid Username', True

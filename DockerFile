@@ -5,7 +5,6 @@ WORKDIR /app
 
 COPY app.py boot.sh wsgi.py user_data.py requirements.txt ./
 COPY assets assets
-COPY data data
 
 RUN pip install -r requirements.txt
 RUN chmod +x boot.sh

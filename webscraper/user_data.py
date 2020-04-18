@@ -3,21 +3,6 @@ from datetime import date, timedelta, datetime
 from bs4 import BeautifulSoup
 
 
-def check_username(username):
-    '''Check if the input username exists and has Diary Settings set to Public'''
-    if not username:
-        return False
-    url = 'https://www.myfitnesspal.com/food/diary/' + username + '?date=' + datetime.strftime(date.today(), '%Y-%m-%d')
-    s = requests.Session()
-    html = BeautifulSoup(s.get(url).content, 'html.parser')
-    try:
-        div = html.find('div', attrs={'class': 'block-1', 'p': None}).contents
-        text = [x for x in div][1].text.strip()
-        if text == 'This user maintains a private diary.' or text == 'Username ' + username + ' can not be found.':
-            return False
-    except:
-        return True
-
 class MFP_User:
     '''
     Represents any MyFitnessPal User and their associated nutrition data

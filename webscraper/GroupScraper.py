@@ -23,7 +23,7 @@ class GroupScraper:
     def _make_data_dirs(self):
         for i in range(1, self.pages+1):
             try:
-                os.makedirs('data/page_' + str(i))
+                os.makedirs('../data/page_' + str(i))
             except FileExistsError:
                 pass
 
@@ -109,7 +109,7 @@ class GroupScraper:
             group (Dict): Dictionary of MyFitnessPal Groups
             group_no (int): Index term used for tracking groups
         '''
-        with open('data/page_%s/group_%s.json' % (str(page_no), str(group_no)), 'w') as f:
+        with open('../data/page_%s/group_%s.json' % (str(page_no), str(group_no)), 'w') as f:
             json.dump(self.data[group], f, indent=4)
 
 

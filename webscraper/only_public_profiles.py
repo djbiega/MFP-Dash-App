@@ -17,8 +17,9 @@ def check_username(username):
     if s.get(url).status_code == 200:
         try:
             html = BeautifulSoup(s.get(url).content, 'html.parser')
-            div = html.find('div', attrs={'class': 'block-1', 'p': None}).contents
+            div = html.find('div', attrs={'id': 'main', 'p': None}).contents
             text = [x for x in div][1].text.strip()
+
             if text == 'This user maintains a private diary.' or text == 'Username ' + username + ' can not be found.':
                 return False
             else:
@@ -38,7 +39,9 @@ def is_public(username):
 def only_public_members():
     '''
     Expected directory structure to search:
-    ~/data/
+    ~/webscraper/
+        |--/only_public_profiles.py
+    /data/
         |--/page_1/
             |--group_1.json
             |--group_2.json
@@ -49,7 +52,7 @@ def only_public_members():
             ...
         '''
     json_files = {}
-    for root, dirs, files in os.walk(join(os.getcwd(), 'data')): 
+    for root, dirs, files in os.walk(join(os.getcwd(), '../data')): 
         json_files[root] = files
     # Remove Key on top level directory
     del json_files[join(os.getcwd(), 'data')]
@@ -58,31 +61,28 @@ def only_public_members():
     s = requests.Session()
     for page_dir, json_page_list in json_files.items():
         for json_page in json_page_list:
-            if page_dir not in [join(os.getcwd(), 'data', 'page_3'), join(os.getcwd(), 'data', 'page_4'), join(os.getcwd(), 'data', 'page_5'), join(os.getcwd(), 'data', 'page_6')] or json_page not in ['group_13.json']:
-                pass #421, 
-            else:
-                with open(join(page_dir, json_page)) as f:
-                    json_data = json.load(f)
-                    print(join(page_dir, json_page))
+            with open(join(page_dir, json_page)) as f:
+                json_data = json.load(f)
+                print(join(page_dir, json_page))
 
-                    with Pool(cpu_count()-1) as p:
-                        public_profiles = p.map(is_public, json_data['Members'])
-                    p.close()
-                    p.join()
-                    
-                    # Remove all None values (Private Accounts)
-                    public_profiles = list(filter(None, public_profiles))
-                    
-                    group = json_data['Group']
+                with Pool(cpu_count()-1) as p:
+                    public_profiles = p.map(is_public, json_data['Members'])
+                p.close()
+                p.join()
+                
+                # Remove all None values (Private Accounts)
+                public_profiles = list(filter(None, public_profiles))
+                
+                group = json_data['Group']
 
-                    public_json[group] = {
-                        'Group': group,
-                        'URL': json_data['URL'],
-                        'Member_Count': json_data['Member_Count'],
-                        'Members': public_profiles
-                    }
+                public_json[group] = {
+                    'Group': group,
+                    'URL': json_data['URL'],
+                    'Member_Count': json_data['Member_Count'],
+                    'Members': public_profiles
+                }
 
-                    to_json(page_dir, json_page, public_json[group])
+                to_json(page_dir, json_page, public_json[group])
 
 def to_json(page_dir, json_page, data):
     '''
@@ -98,7 +98,7 @@ def to_json(page_dir, json_page, data):
 if __name__ == '__main__':
     import time
     start = time.time()
-    only_public_members()
+    check_username('djbiega2')
     end = time.time()
     print('DONE!\n')
     print('Your function took %s seconds to run' % (end-start))
