@@ -5,3 +5,4 @@ venv/
 __pycache__/
 *.code-workspace
 *.mypy_cache/
+database.ini

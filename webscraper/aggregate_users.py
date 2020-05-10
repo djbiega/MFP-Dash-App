@@ -22,9 +22,8 @@ def concatenate_json(data_dir):
 def to_json(json_list):
     '''Dump list of dicts into a single json file'''
     with open(os.path.join(data_dir, 'usernames.json'), 'w') as fout:
-        for dic in json_list:
-            json.dump(dic, fout, indent=4)
-            fout.write('\n')
+        # for dic in json_list:
+        json.dump(json_list, fout, indent=4)
 
 if __name__=='__main__':
     abs_path = os.path.abspath(os.path.dirname(__file__))
