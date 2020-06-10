@@ -29,14 +29,26 @@ def create_tables():
             mfp_username text,
             entry_date DATE,
             item text,
-            protein int,
-            carbs int,
+            calories int,
             fat int,
+            polyunsaturated_fat int,
+            saturated_fat int,
+            monounsaturated_fat int,
+            trans_fat int,
+            cholesterol int,
+            sodium int,
+            potassium int,
+            carbohydrates int,
             fiber int,
             sugar int,
-            calories int
+            protein int,
+            vitamin_a int,
+            vitamin_c int,
+            calcium int,
+            iron int
         )
-        ''']
+        '''
+    ]
     conn=None
     try:
         # Load config parameters from database.ini

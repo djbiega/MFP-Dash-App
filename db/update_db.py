@@ -25,7 +25,7 @@ def get_groups(data):
     return groups
 
 def get_users(data):
-    '''Return Groups from input data'''
+    '''Return Users from input data'''
     users = [user for group in data for user in group['Members']]
     return users    
     
@@ -135,26 +135,40 @@ def insert_nutrition(users):
 
         sql = '''
         INSERT INTO nutrition (mfp_username, entry_date, item, \
-            protein, carbs, fat, fiber, sugar, calories)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+            calories, protein, carbohydrates, fat, fiber, sugar, saturated_fat, \
+            polyunsaturated_fat, monounsaturated_fat, trans_fat, cholesterol, \
+            sodium, potassium, vitamin_a, vitamin_c, calcium, iron)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
         '''        
         try:
-            # Note that there is no "date"
-            for date in mfp_user.data['Dates'].keys():
-                for item in mfp_user.data['Dates'][date]['Items'].keys():
-                    protein = mfp_user.data['Dates'][date]['Items'][item]['Protein']
-                    carbs = mfp_user.data['Dates'][date]['Items'][item]['Carbohydrates']
-                    fat = mfp_user.data['Dates'][date]['Items'][item]['Fat']
-                    fiber = mfp_user.data['Dates'][date]['Items'][item]['Fiber']
-                    sugar = mfp_user.data['Dates'][date]['Items'][item]['Sugar']
-                    cals = mfp_user.data['Dates'][date]['Items'][item]['Calories']
+            for day in mfp_user.data['Dates'].keys():
+                for item in mfp_user.data['Dates'][day]['Items'].keys():
+                    cals = mfp_user.data['Dates'][day]['Items'][item]['Calories']
+                    protein = mfp_user.data['Dates'][day]['Items'][item]['Protein']
+                    carbs = mfp_user.data['Dates'][day]['Items'][item]['Carbohydrates']
+                    fat = mfp_user.data['Dates'][day]['Items'][item]['Fat']
+                    fiber = mfp_user.data['Dates'][day]['Items'][item]['Fiber']
+                    sugar = mfp_user.data['Dates'][day]['Items'][item]['Sugar']
+                    sat_fat = mfp_user.data['Dates'][day]['Items'][item]['Saturated Fat']
+                    polyunsat_fat = mfp_user.data['Dates'][day]['Items'][item]['Polyunsaturated Fat']
+                    monounsat_fat = mfp_user.data['Dates'][day]['Items'][item]['Monounsaturated Fat']
+                    trans_fat = mfp_user.data['Dates'][day]['Items'][item]['Trans Fat']
+                    cholesterol = mfp_user.data['Dates'][day]['Items'][item]['Cholesterol']
+                    sodium = mfp_user.data['Dates'][day]['Items'][item]['Sodium']
+                    potassium = mfp_user.data['Dates'][day]['Items'][item]['Potassium']
+                    vitamin_a = mfp_user.data['Dates'][day]['Items'][item]['Vitamin A']
+                    vitamin_c = mfp_user.data['Dates'][day]['Items'][item]['Vitamin C']
+                    calcium = mfp_user.data['Dates'][day]['Items'][item]['Calcium']
+                    iron = mfp_user.data['Dates'][day]['Items'][item]['Iron']
 
-                    cur.execute(sql, (mfp_user.username, date, item, protein, carbs, fat, fiber, sugar, cals))
+                    cur.execute(sql, (mfp_user.username, day, item, cals, protein, carbs, fat, fiber, sugar,
+                        sat_fat, polyunsat_fat, monounsat_fat, trans_fat, cholesterol, sodium, potassium,
+                        vitamin_a, vitamin_c, calcium, iron))
+                    # commit the changes
+                    conn.commit()
         except (Exception, psycopg2.DatabaseError) as error:
             print(error)
 
-    # commit the changes
-    conn.commit()
     # close communication with the PostgreSQL database server
     conn.close()
     cur.close()
@@ -167,7 +181,7 @@ if __name__=='__main__':
     user_groups = get_users_groups(data)
 
     # Insert data into database
-    # insert_users(users)
-    # insert_groups(groups)
-    # insert_group_user_relations(user_groups)
+    insert_users(users)
+    insert_groups(groups)
+    insert_group_user_relations(user_groups)
     insert_nutrition(users)
