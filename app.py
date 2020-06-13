@@ -16,6 +16,7 @@ from dash_table import DataTable
 
 from webscraper import only_public_profiles
 from webscraper.user_data import MFP_User
+from db import update_db
 
 server = flask.Flask(__name__)
 app = dash.Dash(__name__,
@@ -23,10 +24,12 @@ app = dash.Dash(__name__,
                 server=server)
 server = app.server
 
-cols = ['Item', 'Protein', 'Carbohydrates', 'Fat', 'Fiber', 'Sugar', 'Calories']
+DB_ONLY_COLS = ['mfp_username', 'entry_date', 'id']
+START_SCRAPE_DATE='2016-01-01'
 
 app.layout = html.Div(
-    [
+    style={'backgroundColor': '#F2F2F2'},
+    children = [
         html.Div(
             className='banner',
             children=
@@ -68,7 +71,7 @@ app.layout = html.Div(
                                     id='mfp-username', 
                                     value='', 
                                     type='text',
-                                    className="input-field"
+                                    className='input-field'
                                     ),
                             ),
                         ),
@@ -81,7 +84,7 @@ app.layout = html.Div(
                                     dismissable=False,
                                     fade=False,
                                     is_open=False,
-                                    className="input-field"
+                                    className='input-field'
                                 ), width = 4
                             )
                         ),
@@ -115,40 +118,40 @@ app.layout = html.Div(
         ),
         html.Div(
             [
+                html.H4('Your Week at a Glance', style={'marginTop': 25, 'marginLeft': 205}, ),
                 dbc.Container(
                     [                       
                         dbc.Row(
                             [
                                 dbc.Col(
                                     [
-                                        html.H4('Your Week at a Glance', style={'marginTop': 25}),
-                                            html.Div(
-                                                children = [
-                                                    dcc.Loading(id='loading-pie-chart', children = [
-                                                        dcc.Graph(
-                                                            id='weekly-pie-chart',
-                                                            className='pie-chart',
-                                                            config={'displayModeBar': False},
-                                                            figure={}
-                                                        )
-                                                    ],
-                                                    type='default'
-                                                    ) 
-                                                ]
-                                            ),
-                                            html.Div(
-                                                children=[
-                                                    dcc.Loading(id='loading-bar-chart', children = [
-                                                        dcc.Graph(
-                                                            id='weekly-bar-chart',
-                                                            config={'displayModeBar': False},
-                                                            figure={}
-                                                        )
-                                                    ],
-                                                    type='default'
+                                        html.Div(
+                                            children = [
+                                                dcc.Loading(id='loading-pie-chart', children = [
+                                                    dcc.Graph(
+                                                        id='weekly-pie-chart',
+                                                        className='pie-chart',
+                                                        config={'displayModeBar': False},
+                                                        figure={}
                                                     )
-                                                ]
-                                            )
+                                                ],
+                                                type='default'
+                                                ) 
+                                            ], className='pretty_container',
+                                        ),
+                                        html.Div(
+                                            children=[
+                                                dcc.Loading(id='loading-bar-chart', children = [
+                                                    dcc.Graph(
+                                                        id='weekly-bar-chart',
+                                                        config={'displayModeBar': False},
+                                                        figure={}
+                                                    )
+                                                ],
+                                                type='default'
+                                                )
+                                            ], className='pretty_container',
+                                        )
                                     ], width=6
                                 ),
                                 dbc.Col(
@@ -175,9 +178,9 @@ app.layout = html.Div(
                                                         dcc.Loading(id='loading-fat-table', children = [html.Div(id='fat-table')], type='default')
                                                     ]
                                                 )
-                                            ]
+                                            ], className='pretty_container',
                                         )
-                                    ], width=6, style={'marginTop': 25}
+                                    ], width=6
                                 )
                             ]
                         )
@@ -206,7 +209,8 @@ app.layout = html.Div(
                                 ]
                             )
                         )
-                    ),
+                    # ), style={'backgroundColor': '#F9F9F9', 'borderRadius': '5px', 'padding': '15px', 'position': 'relative', 'boxShadow': 'lightgrey'}
+                    ), className='line_pretty_container',
                 ),
                 dbc.Container(
                     [
@@ -218,36 +222,16 @@ app.layout = html.Div(
                         ),
                         dbc.Row(
                             dbc.Col(
-                                DataTable(
-                                    id='data-table',
-                                    style_data={
-                                        'whiteSpace': 'normal',
-                                        'height': 'auto'
-                                    },
-                                    columns=[{'name': i, 'id': i} for i in cols],
-                                    style_as_list_view=True,
-                                    style_cell={'textAlign': 'center'},
-                                    style_header={
-                                        'backgroundColor': '#F1F1F1',
-                                        'fontWeight': 'bold'
-                                    },
-                                    style_cell_conditional=[
-                                        {
-                                            'if': {'column_id': 'Item'},
-                                            'textAlign': 'left'
-                                        }
-                                    ],
-                                    sort_action='native',
-                                ),
-                                width=12, style={'marginTop': '5px'}
+                                html.Div(id='data-table'), width=12, className='line_pretty_container'  
                             )
                         ),
-                        html.P(id='blank-space', style={'height': '300px'})
-                    ]
-                ), html.Div(id='hidden-data', style={'display': 'none'}),
+                    ], className='line_pretty_container',
+                ), 
+                html.P(id='blank-space', style={'height': '300px'}),
+                html.Div(id='hidden-data', style={'display': 'none'})
             ]
         )
-    ], style={'backgroundColor': 'white'}
+    ]
 )
 
 @app.callback(
@@ -259,9 +243,7 @@ app.layout = html.Div(
 def check_username(click, username):
     if not click:
         raise PreventUpdate
-    print(username)
     valid = only_public_profiles.check_username(username)
-    print(valid)
     if valid:
         return username, False
     return 'Invalid Username', True
@@ -279,9 +261,10 @@ def check_username(click, username):
 def load_data(username, click, start_date, end_date):
     # Load sample data when the app is loaded
     if not click:
-        username = 'djbiega2'
+        raise PreventUpdate
 
     if username != 'Invalid Username' and username != None:
+        print("username not invalid: %s" % username)
         # Convert ISO-8601 inputs to Strings
         start_date = datetime.strftime(
            datetime.fromisoformat(start_date), '%Y-%m-%d'
@@ -289,40 +272,25 @@ def load_data(username, click, start_date, end_date):
         end_date = datetime.strftime(
            datetime.fromisoformat(end_date), '%Y-%m-%d'
         )
-    
-        # Scrape weekly data as a list of DataFrames
-        user = MFP_User(username, start_date, end_date)
-        date_list = list(user.data['Dates'].keys())     
 
-        df_list = []
-        for date in date_list:
-            df_list.append(pd.DataFrame.from_dict(user.data['Dates'][date]['Items'], orient='index'))
-
-        # Sort by Date
-        idx = np.argsort(date_list)
-        date_list = [date_list[i] for i in idx]
-        df_list = [df_list[i].applymap(np.int64) for i in idx]
-        
-        # return JSON of the aggregated data
-        data = {date: df_list[idx].to_json(orient='split') for idx, date in enumerate(date_list)}
-        return json.dumps(data)
-
-def de_jsonify_data(jsonified_data):
-    
-    def _check_for_empty_df_list(df_list):
-        # Convert any empty DataFrames into Dataframes of 0s
-        for idx, df in enumerate(df_list):
-            if df.empty:
-                df_list[idx] = pd.DataFrame([['-',0,0,0,0,0,0]], columns=cols).set_index('Item')
-        return df_list
-
-    data = json.loads(jsonified_data)
-    date_list = list(data.keys())
-    df_list = [pd.read_json(data[i], orient='split') for i in date_list]
-    df_list = _check_for_empty_df_list(df_list)
-
-    return data, df_list, date_list
-
+        user_exists, last_updated = update_db.db_check_user(username)
+        if user_exists:
+            yesterday = datetime.strftime((date.today()-timedelta(1)), '%Y-%m-%d')
+            today = datetime.strftime((date.today()), '%Y-%m-%d')
+            if (last_updated != yesterday and last_updated != today):
+                print("last updated: %s" % last_updated)
+                # Update the database with the most recent entries
+                print("Scraping some of it")
+                update_db.insert_nutrition([username], last_updated)
+        else:
+            # Update the database with all entries
+            print("Scraping all of it: %s" % username)
+            update_db.insert_nutrition([username], START_SCRAPE_DATE)
+        print("user_data:")
+        user_data = update_db.return_data(username, start_date, end_date)
+        print("done scraping")
+        json_out=user_data.to_json(orient='records', date_format='iso')
+        return json_out
 
 
 @app.callback(
@@ -331,55 +299,81 @@ def de_jsonify_data(jsonified_data):
     Output('weekly-pie-chart', 'figure')],
     [Input('hidden-data', 'children')]
 )
-def plot_data(jsonified_data):
-    if jsonified_data is None:
+def plot_data(json_in):
+    if json_in is None:
         raise PreventUpdate
-    _, df_list, date_list = de_jsonify_data(jsonified_data)
+    df_data = pd.read_json(json_in)
+    df_data['entry_date'] = pd.to_datetime(df_data['entry_date']).dt.date   
+    date_list = sorted(df_data['entry_date'].unique())
 
     # Add a line plot of Protein, Carbs, Fat, Fiber, Sugar, Calories
     fig = go.Figure()
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['protein'].sum(),
                         'type': 'scatter', 
                         'name': 'Protein',
-                        'line': {'color': '#1C4E80'}
+                        'line': {
+                            'color': '#1C4E80',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['carbohydrates'].sum(),
                         'type': 'scatter', 
                         'name': 'Carbohydrates',
-                        'line': {'color': '#A5D8DD'}
+                        'line': {
+                            'color': '#A5D8DD',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['fat'].sum(),
                         'type': 'scatter', 
                         'name': 'Fat',
-                        'line': {'color': '#EA6A47'}
+                        'line': {
+                            'color': '#EA6A47',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Fiber'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['fiber'].sum(),
                         'type': 'scatter', 
                         'name': 'Fiber',
-                        'line': {'color': '#6AB187'}
+                        'line': {
+                            'color': '#6AB187',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Sugar'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['sugar'].sum(),
                         'type': 'scatter', 
                         'name': 'Sugar',
-                        'line': {'color': '#7E909A'}
+                        'line': {
+                            'color': '#7E909A',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
-                        'y': [df_list[i]['Calories'].sum() for i in range(len(df_list))],
+                        'y': df_data.groupby('entry_date')['calories'].sum(),
                         'type': 'scatter', 
                         'name': 'Calories', 
                         'yaxis': 'y2',
-                        'line': {'color':'#202020'}
+                        'line': {
+                            'color': '#202020',
+                            'shape': 'spline',
+                            'smoothing': 0.75
+                        }
                     }))
     fig.update_layout(
                 yaxis={'title': 'Grams'}, 
@@ -407,21 +401,21 @@ def plot_data(jsonified_data):
     fig2 = go.Figure()
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i]['Protein'].sum() for i in range(len(df_list))],
+        'y': df_data.groupby('entry_date')['protein'].sum(),
         'name': 'Protein',
         'marker_color': '#1C4E80',
         'hovertemplate': '%{y} Grams<extra></extra>'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i]['Carbohydrates'].sum() for i in range(len(df_list))],
+        'y': df_data.groupby('entry_date')['carbohydrates'].sum(),
         'name': 'Carbohydrates',
         'marker_color': '#A5D8DD',
         'hovertemplate': '%{y} Grams<extra></extra>'
     }))
     fig2.add_trace(go.Bar({
         'x': date_list,
-        'y': [df_list[i]['Fat'].sum() for i in range(len(df_list))],
+        'y': df_data.groupby('entry_date')['fat'].sum(),
         'name': 'Fat',
         'marker_color': '#EA6A47',
         'hovertemplate': '%{y} Grams<extra></extra>'
@@ -453,9 +447,9 @@ def plot_data(jsonified_data):
     fig3.add_trace(go.Pie(
         labels=['Protein', 'Carbohydrates', 'Fat'], 
         values=[
-                np.sum([df_list[i]['Protein'].sum()*4 for i in range(len(df_list))]),
-                np.sum([df_list[i]['Carbohydrates'].sum()*4 for i in range(len(df_list))]),    
-                np.sum([df_list[i]['Fat'].sum()*9 for i in range(len(df_list))])
+                np.sum(df_data.groupby('entry_date')['protein'].sum()*4),
+                np.sum(df_data.groupby('entry_date')['carbohydrates'].sum()*4),
+                np.sum(df_data.groupby('entry_date')['fat'].sum()*4),
         ], 
         textinfo='label+percent', 
         insidetextorientation='radial',
@@ -488,7 +482,6 @@ def plot_data(jsonified_data):
 def dropdown(click, start_date, end_date):
     if not click:
         raise PreventUpdate
-
     start_date = datetime.fromisoformat(start_date)
     end_date = datetime.fromisoformat(end_date)
     date_range = (end_date - start_date).days + 1
@@ -502,33 +495,55 @@ def dropdown(click, start_date, end_date):
     return options
 
 
-
-
-
 @app.callback(
-    Output('data-table', 'data'),
+    Output('data-table', 'children'),
     [Input('hidden-data', 'children'),
     Input('date-dropdown', 'value')]
 )
-def display_tables(jsonified_data, selected_date):
-    if jsonified_data is None or selected_date is None:
+def display_tables(json_in, selected_date):
+    if json_in is None or selected_date is None:
         raise PreventUpdate
-    data, _, _ = de_jsonify_data(jsonified_data)
-    # Create the tables. If there isn't any data, return a DataFrame of all 0's
+
+    df_data = pd.read_json(json_in)
+    df_data['entry_date'] = pd.to_datetime(df_data['entry_date']).dt.date
     try:
-        df = pd.concat([pd.read_json(data[i], orient='split').reset_index() for i in selected_date])
-        df.rename(columns={'index': 'Item'}, inplace=True)
+        out_data = pd.concat(df_data.loc[df_data['entry_date']==datetime.strptime(day, '%Y-%m-%d').date()] for day in selected_date)
     except:
-        df = pd.DataFrame([['-',0,0,0,0,0,0]], columns=cols).set_index('Item')
-    weekly_table = df.to_dict('records')
-    return weekly_table
+        out_data = df_data.loc[df_data['entry_date']==datetime.strptime(selected_date[0], '%Y-%m-%d').date()]
+
+
+    out_data = out_data[[col for col in out_data.columns if col not in DB_ONLY_COLS]]
+
+    return DataTable(
+        data=out_data.to_dict('rows'), 
+        columns=[{'name': i, 'id': i} for i in out_data.columns],
+        style_data={
+            'whiteSpace': 'normal',
+            'height': 'auto'
+        },
+        style_as_list_view=True,
+        style_cell={'textAlign': 'center'},
+        style_header={
+            'backgroundColor': '#F1F1F1',
+            'fontWeight': 'bold'
+        },
+        style_cell_conditional=[
+            {
+                'if': {'column_id': 'Item'},
+                'textAlign': 'left'
+            }
+        ],
+        sort_action='native'
+    )
     
-def generate_stats_tables(df, nutrient):
+def generate_stats_tables(json_in, nutrient):
+    df_data = pd.read_json(json_in)
+    df_data['entry_date'] = pd.to_datetime(df_data['entry_date']).dt.date
     table_header = [
         html.Thead(html.Tr([html.Th('Foods Highest in %s' % nutrient), html.Th('Value')]), style={'textAlign': 'center'})
     ]
     
-    top_3 = df.nlargest(3, nutrient)[['Item', nutrient]]
+    top_3 = df_data.nlargest(3, nutrient)[['item', nutrient]]
 
     item_1 = top_3.iloc[[0]]
     item_2 = top_3.iloc[[1]]
@@ -536,19 +551,19 @@ def generate_stats_tables(df, nutrient):
 
     row1 = html.Tr(
         [
-        html.Td(str(item_1.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
+        html.Td(str(item_1.loc[:, 'item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
         html.Td(str(item_1.loc[:, nutrient].values[0]), style={'textAlign': 'center'})      
         ]
     )
     row2 = html.Tr(
         [       
-            html.Td(str(item_2.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
+            html.Td(str(item_2.loc[:, 'item'].values[0]), style={'padding':'5px 5px 5px 0px'}),
             html.Td(str(item_2.loc[:, nutrient].values[0]), style={'textAlign': 'center'})
         ]
     )
     row3 = html.Tr(
         [
-            html.Td(str(item_3.loc[:, 'Item'].values[0]), style={'padding':'5px 5px 5px 0px'}), 
+            html.Td(str(item_3.loc[:, 'item'].values[0]), style={'padding':'5px 5px 5px 0px'}), 
             html.Td(str(item_3.loc[:, nutrient].values[0]), style={'textAlign': 'center'})
         ]
     )
@@ -561,52 +576,42 @@ def generate_stats_tables(df, nutrient):
         style={'width': 500, 'fontSize': '13px'},
         )
 
-def concat_nutrition_stats_dfs(jsonified_data):
-    _, df_list, date_list = de_jsonify_data(jsonified_data)
-    df = pd.concat([(df_list[i]).reset_index() for i in range(len(date_list))])
-    df.rename(columns={'index': 'Item'}, inplace=True)
-    return df
-
 @app.callback(
     Output('calories-table', 'children'),
     [Input('hidden-data', 'children')]
 )
-def calories_table(jsonified_data):
-    if jsonified_data is None:
+def calories_table(json_in):
+    if json_in is None:
         raise PreventUpdate
-    df = concat_nutrition_stats_dfs(jsonified_data)
-    return generate_stats_tables(df, 'Calories')
+    return generate_stats_tables(json_in, 'calories')
 
 @app.callback(
     Output('protein-table', 'children'),
     [Input('hidden-data', 'children')]
 )
-def protein_table(jsonified_data):
-    if jsonified_data is None:
+def protein_table(json_in):
+    if json_in is None:
         raise PreventUpdate
-    df = concat_nutrition_stats_dfs(jsonified_data)
-    return generate_stats_tables(df, 'Protein')
+    return generate_stats_tables(json_in, 'protein')
 
 @app.callback(
     Output('carbs-table', 'children'),
     [Input('hidden-data', 'children')]
 )
-def carbs_table(jsonified_data):
-    if jsonified_data is None:
+def carbs_table(json_in):
+    if json_in is None:
         raise PreventUpdate
-    df = concat_nutrition_stats_dfs(jsonified_data)
-    return generate_stats_tables(df, 'Carbohydrates')
+    return generate_stats_tables(json_in, 'carbohydrates')
 
 @app.callback(
     Output('fat-table', 'children'),
     [Input('hidden-data', 'children')]
 )
-def fat_table(jsonified_data):
-    if jsonified_data is None:
+def fat_table(json_in):
+    if json_in is None:
         raise PreventUpdate
-    df = concat_nutrition_stats_dfs(jsonified_data)
-    return generate_stats_tables(df, 'Fat')
+    return generate_stats_tables(json_in, 'fat')
 
 
 if __name__ == '__main__':
-    app.run_server(host ='0.0.0.0', debug=True)
+    server.run()

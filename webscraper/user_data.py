@@ -18,7 +18,7 @@ class MFP_User:
         date_start = datetime.strptime(date_start, '%Y-%m-%d').date()
         date_end = datetime.strptime(date_end, '%Y-%m-%d').date()
         assert (date_end - date_start).days >= 0, 'date_end must be before date_start'
-        print('Scraping %s' % self.username)        
+        print('Scraping %s for %s through %s' % (self.username, date_start, date_end))       
         date_list = self._get_dates_to_check(date_start, date_end)
         url_list = self._get_urls(date_list)
         s = requests.Session()
@@ -29,6 +29,13 @@ class MFP_User:
             
         with ThreadPoolExecutor(max_workers=1) as executor:
             processes = [executor.submit(self._scrape_urls(s, url, date_list.pop())) for url in url_list[::-1]]
+
+        # return all dates without entires as empty dictionaries
+        delta = date_end-date_start
+        for i in range(delta.days+1):
+            d = datetime.strftime((date_start+timedelta(days=i)), '%Y-%m-%d')
+            if d not in self.data['Dates'].keys():
+                self.data['Dates'][d] = {}
 
     def _get_dates_to_check(self, date_start, date_end):
         '''
@@ -43,7 +50,7 @@ class MFP_User:
         '''
         date_list = []
         if date_start.year != date_end.year:
-            years = range(date_start.year, date_end.year)
+            years = [y for y in (date_start.year, date_end.year)]
             months = [m for m in range(1,13)]
             days = [5, 15, 25]
             for y in years:
@@ -215,7 +222,7 @@ if __name__ == '__main__':
     import json
     import time
     start = time.time()
-    user = MFP_User('djbiega2', '2018-1-25', '2018-1-26')
+    user = MFP_User('djbiega2', '2019-06-28')
     print('User:' + user.username)
     print(json.dumps(user.data, indent=1))
     print('=========================================')

@@ -1,9 +1,9 @@
 import os
 from configparser import ConfigParser
  
-basedir = os.path.abspath(os.path.dirname(__file__))
+BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
-def config(filename=os.path.join(basedir, 'database.ini'), section='postgresql'):
+def config(filename=os.path.join(BASEDIR, 'database.ini'), section='postgresql'):
     # create a parser
     parser = ConfigParser()
     # read config file

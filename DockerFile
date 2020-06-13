@@ -3,9 +3,18 @@ FROM python:3.8.2
 RUN mkdir /app
 WORKDIR /app
 
-COPY app.py boot.sh wsgi.py user_data.py requirements.txt ./
-COPY assets assets
+# set environment variables. Prevents python from writing pyc files 
+# to disc and from buffering stdout and stderr
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1 # 
 
+COPY app.py boot.sh wsgi.py requirements.txt ./
+COPY assets assets
+COPY db db
+COPY webscraper webscraper
+
+# install dependencies
+RUN pip install --upgrade pip
 RUN pip install -r requirements.txt
 RUN chmod +x boot.sh
 
