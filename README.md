@@ -1,5 +1,49 @@
 # MFP-Dash-App
 
-This is a Web Application to give MyFitnessPal users more insights into the nutrition information that they are already logging through the app. At this stage, the application is actively running at https://djbiega.pythonanywhere.com/. Note that the project is __NOT__ yet complete. The project in its current state is able to take an input public MyFitnessPal Username and range of dates, and will then scrape the publically available information in real time and then showcase a dashboard. The data is not being stored at this time.
+## Introduction
+`MFP-Dash-App` is a dashboard to give MyFitnessPal users more insights into the nutrition information that they are already logging through the app. At this point, the application is not being actively hosted on any public domain. The app was previously running at https://djbiega.pythonanywhere.com/ but I had to take it down after adding in PostgreSQL (the free tier does not support PostgreSQL)
 
-The next steps in the project is to create a database of MyFitnessPal nutrition data and provide an API for the WebApp for faster results and a better user experience. 50,000 public usernames have already been collected by scraping the most popular groups within the MyFitnessPal forums, and the nutrition info. that has been logged over the past 5 years of each of these users will serve as the initial database. Using this information, the goal is to create an API such that when a new username is searched for in the Web App, the user will be added to the databse along with all of their associated logged nutrition data. Similarly, already added users will have their nutrition info updated if any new information has been logged since the last database update. With this data, the end goal is to provide a food recommendation system to give meal ideas based on nutrition goals, and to also develop a classifier to identify any "bad" nutrition data (i.e. any logged data that may be incorrectly logged - such as a user who may have enter 10000 calories for a single slice of pizza)
+## Motivation
+MyFitnessPal is currently very limited with how it displays your own nutrition data, and even more so if you want to look at what your friends have entered. As is, you can only see the entries that have been entered on a daily basis which makes it difficult to see how closely what you've been eating aligns with your goals. To solve this, I created this application which will scrape all of your logged nutrition date since January 1, 2016 into a database which can then be used to quickly access and visualize your nutrition data over time. To avoid bombarding the MyFitnessPal site, your data will not be updated again until you use use the application again -- upon which it will then scrape the dates which have gone by since you last used the application.
+
+## Who could this be useful for
+* Personal Trainers/Nutritionists looking to get better insights into how their clients are maintaining their diets
+* Anyone who wants better insights into their nutrition data
+
+## Screenshots
+![initial](images/screenshots_top.PNG)
+![initial](images/screenshots_bottom.png)
+
+## Built With
+* [Dash](https://dash.plot.ly/) - Main UI and interactive application components
+* [Plotly Python](https://plot.ly/python/) - Used to create the interactive plots
+* [Flask](https://flask.palletsprojects.com/en/1.1.x/) - Used as a server for hosting the application
+
+## Requirements
+All required packages can be located in the ``requirements.txt`` file. To re-create this application, run the following steps:
+```
+git clone https://github.com/djbiega/MFP-Dash-App.git
+cd MFP-Dash-App
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+
+## How to use this app
+Run this app locally with either
+```
+python app.py
+```
+or 
+```
+python wsgi.py
+```
+Then open a browser and navigate to http://127.0.0.1:5000/. The dashboard will be up and running. You can then search for any user on MyFitnessPal. However, you will only be able to look at their data if their Diary settings are set to public in MyFitnessPal.
+
+## Future work
+* Allow users the option to export their data and download it locally to their machine
+* Dockerize the application for ease of portability and hosting in an EC2 instance within ECS
+
+## Lessons Learned
+* MORE UNIT TESTING! I spent hours debugging problems which could have very easily been avoided if I had committed to following a test-driven development flow
+* Focus on breaking large features down into smaller, more manageable chunks. There were times where I felt that I was running in circles because I was so focused on trying to implement one huge feature that I wound up undoing previous code (and I didn't catch it until later because I didn't unit test!)
