@@ -40,6 +40,8 @@ class MFP_User:
     
         date_start = datetime.strptime(date_start, '%Y-%m-%d').date()
         date_end = datetime.strptime(date_end, '%Y-%m-%d').date()
+        print(date_start)
+        print(date_end)
         assert (date_end - date_start).days >= 0, 'date_end must be before date_start'
        
         print('Scraping %s for %s through %s' % (self.username, date_start, date_end))       
@@ -298,7 +300,7 @@ if __name__ == '__main__':
     import json
     import time
     start = time.time()
-    user = MFP_User('cpbiega', '2020-06-2', '2020-06-10')
+    user = MFP_User('djbiega2', '2020-06-01')
     print('User:' + user.username)
     print(json.dumps(user.data, indent=1))
     print('=========================================')

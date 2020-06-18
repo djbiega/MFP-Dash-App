@@ -182,7 +182,9 @@ def insert_nutrition(users, last_date):
         '''
         try:
             for day in mfp_user.data['Dates'].keys():
-                if mfp_user.data['Dates'][day]:
+                if day == 'Items':
+                    pass
+                elif mfp_user.data['Dates'][day]:
                     for item in mfp_user.data['Dates'][day]['Items'].keys():
                         cals = mfp_user.data['Dates'][day]['Items'][item]['Calories']
                         protein = mfp_user.data['Dates'][day]['Items'][item]['Protein']
@@ -303,16 +305,16 @@ def return_data(user, date_start, date_end):
     
 if __name__=='__main__':
     # Get Data
-    data = get_forum_data()
-    groups = get_groups(data)
-    users = get_users(data)
-    user_groups = get_users_groups(data)
+    # data = get_forum_data()
+    # groups = get_groups(data)
+    # users = get_users(data)
+    # user_groups = get_users_groups(data)
 
     # Insert data into database
-    insert_users(users)
-    insert_groups(groups)
-    insert_group_user_relations(user_groups)
-    insert_nutrition(users, '2016-01-01')
+    # insert_users(users)
+    # insert_groups(groups)
+    # insert_group_user_relations(user_groups)
+    insert_nutrition(['djbiega2'], '2020-06-01')
 
     # return data from database
-    return_data('djbiega2', '2020-05-01', '2020-06-12')
+    print(return_data('djbiega2', '2020-05-01', '2020-06-12'))
