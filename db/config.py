@@ -4,6 +4,12 @@ from configparser import ConfigParser
 BASEDIR = os.path.abspath(os.path.dirname(__file__))
 
 def config(filename=os.path.join(BASEDIR, 'database.ini'), section='postgresql'):
+    '''
+    Set up the configuration for postgres
+
+    parameters:
+        filename (str) -- path to the (private) database.ini file
+    '''
     # create a parser
     parser = ConfigParser()
     # read config file

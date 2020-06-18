@@ -13,7 +13,9 @@ from db.config import config
 from webscraper.user_data import MFP_User
 
 def get_forum_data():
-    '''Get and return scraped username/group data from MFP Forums'''
+    '''
+    Get and return scraped username/group data from MFP Forums
+    '''
     basepath = path.dirname(__file__)
     filepath = path.abspath(path.join(basepath, "..", "data/usernames.json"))
     f = open(filepath, "r")
@@ -21,17 +23,26 @@ def get_forum_data():
     return data
 
 def get_groups(data):
-    '''Return Groups from input data'''
+    '''
+    Return Groups from input data
+    '''
     groups = [group['Group'] for group in data]
     return groups
 
 def get_users(data):
-    '''Return Users from input data'''
+    '''
+    Return Users from input data
+    '''
     users = [user for group in data for user in group['Members']]
     return users    
     
 def get_users_groups(data):
-    '''Returns all groups each user belongs to in a dict'''
+    '''
+    Returns all groups each user belongs to in a dict
+    
+    parameters:
+        data (dict) -- dict of json data 
+    '''
     user_groups = {}
     for d in data:
         members = d["Members"]
@@ -40,7 +51,12 @@ def get_users_groups(data):
     return user_groups
 
 def execute_sql(sql, *argv):
-    '''Execute the input SQL statement on the postgreSQL database'''
+    '''
+    Execute the input SQL statement on the postgreSQL database
+
+    parameters:
+        sql (string) -- sql query to executre
+    '''
     conn = None
     id = None
     try:
@@ -73,7 +89,12 @@ def execute_sql(sql, *argv):
 
 
 def insert_users(users):
-    '''Populate all tables with the scraped username data from usernames.json'''
+    '''
+    Populate all tables with the scraped username data from usernames.json
+
+    parameters:
+        users (list of strings) -- list of users to add to the database
+    '''
     sql = '''
     INSERT INTO users (mfp_username)
     VALUES (%s);
@@ -81,7 +102,12 @@ def insert_users(users):
     execute_sql(sql, users)
 
 def insert_groups(groups):
-    '''Populate all tables with the scraped group data from usernames.json'''
+    '''
+    Populate all tables with the scraped group data from usernames.json
+
+    parameters:
+        users (list of strings) -- list of groups to add to the database
+    '''
     sql = '''
     INSERT INTO groups (group_name)
     VALUES (%s);
@@ -89,7 +115,12 @@ def insert_groups(groups):
     execute_sql(sql, groups)
 
 def insert_group_user_relations(user_groups):
-    '''Create relation between groups and users'''
+    '''
+    Create relation between groups and users
+    
+    parameters:
+        users_groups (dict) -- dict of key-value format {user: [group1, group2, ...]}
+    '''
     conn = None
     id = None
     # Load config parameters from database.ini
@@ -120,6 +151,11 @@ def insert_nutrition(users, last_date):
     '''
     Collect all nutrition data from every user over the last 5 years
     and insert into the database
+
+    parameters:
+        users (list of strings) -- list of users to add to the database
+        last_date (str) -- Most recent date that an entry has been recorded in the 
+            database for an input user
     '''
     conn = None
     id = None
@@ -186,6 +222,9 @@ def db_check_user(user):
     Check is username already exists in the database. 
     If it exists, return the most recent date from which an entry has been logged,
     else return 0.
+
+    parameters:
+        users (string) -- username
     '''
     conn = None
     id = None
@@ -228,6 +267,11 @@ def db_check_user(user):
 def return_data(user, date_start, date_end):
     '''
     Return query output as a dataframe for the provided username between the given date ranges
+
+    parameters:
+        users (string) -- username
+        date_start (string) -- start date
+        date_end (string) -- end date
     '''
     conn = None
     id = None

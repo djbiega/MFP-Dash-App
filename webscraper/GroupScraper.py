@@ -11,19 +11,27 @@ class GroupScraper:
         '''
         Collect usernames from the most popular groups in MyFitnessPal as shown on
         https://community.myfitnesspal.com/en/groups/browse/popular
+
+        instance variables:
+            pages (int) -- The number of top (X) number of pages scraped from the MyFitnessPal forums. Default: 10
+            url_list (list of str) -- list of the urls for the top (X) pages to scrape in the forums
+            data (dict) -- dictionary with the following key-value structure:
+                'MyFitnessPal Group Name': {'Group': value, 'URL': value, 'Member_count: value, 'Members': value}                    
         '''
         self._s = requests.Session()
         self.pages = 10
-        self.url_list = ['https://community.myfitnesspal.com/en/groups/browse/popular?Page=p' + \
-            str(i) + '?filter=members' for i in range(1, self.pages+1)]
+        self.url_list=[]
+        for pg in range(1,self.pages+1):
+            self.url_list = 'https://community.myfitnesspal.com/en/groups/browse/popular?Page=p%s?filter=members' % spg
         self._make_data_dirs()
         self.data = {}
         self._get_groups()
 
     def _make_data_dirs(self):
+        '''Make directories to store each page all the groups from each forum page'''
         for i in range(1, self.pages+1):
             try:
-                os.makedirs('../data/page_' + str(i))
+                os.makedirs('../data/page_%s' % i)
             except FileExistsError:
                 pass
 
@@ -31,7 +39,7 @@ class GroupScraper:
         '''
         Parses out all usernames from the groups within url_list. 
         The function will maintain a dictionary 'data' which contains 
-        the Group Name, Number of Members, and List of all members.
+        the Group Name, URL to the group page, Number of Members, and List of all members.
         Each group will be output to its own respective .json file.
         '''
         page_no = 0        
@@ -76,8 +84,12 @@ class GroupScraper:
             member_list (list): list of strings of all members in the group
         '''
         page_count = int(members_count) // 30
-        page_list = [members_link +'/p' + str(pg) + '?filter=members' for pg in range(1, page_count+1)]
+        page_list = []
+        for pg in range(1, page_count+1):
+            url = '%s/p/%s/?filter=members' % (members_link, pg)
+            page_list.append(url)
 
+        # Multiprocessing
         with Pool(cpu_count()-1) as p:
             member_list = p.map(self._get_members_on_page, page_list)
         p.close()
@@ -90,8 +102,9 @@ class GroupScraper:
     def _get_members_on_page(self, url):
         '''
         Function to get all group members on the input url
-        inputs: 
-            url (string): Group Member URL to scrape
+
+        parameters: 
+            url (string) -- Group Member URL to scrape
         '''
         print(f'Scraping %s' % url)
         if self._s.get(url).status_code == 200:
@@ -109,7 +122,7 @@ class GroupScraper:
             group (Dict): Dictionary of MyFitnessPal Groups
             group_no (int): Index term used for tracking groups
         '''
-        with open('../data/page_%s/group_%s.json' % (str(page_no), str(group_no)), 'w') as f:
+        with open('../data/page_%s/group_%s.json' % (page_no, group_no), 'w') as f:
             json.dump(self.data[group], f, indent=4)
 
 

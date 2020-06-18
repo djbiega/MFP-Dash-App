@@ -24,15 +24,16 @@ app = dash.Dash(__name__,
                 server=server)
 server = app.server
 
-DB_ONLY_COLS = ['mfp_username', 'entry_date', 'id']
-START_SCRAPE_DATE='2016-01-01'
+from constants import *
+# DB_ONLY_COLS = ['mfp_username', 'entry_date', 'id']
+# START_SCRAPE_DATE='2016-01-01'
+# YESTERDAY = datetime.strftime((date.today()-timedelta(1)), '%Y-%m-%d')
+# TODAY = datetime.strftime(date.today(), '%Y-%m-%d')
 
-app.layout = html.Div(
-    style={'backgroundColor': '#F2F2F2'},
-    children = [
-        html.Div(
-            className='banner',
-            children=
+def build_banner():
+    return  html.Div(
+        className='banner',
+        children=
             [
                 dbc.Container(
                     dbc.Row(
@@ -57,127 +58,149 @@ app.layout = html.Div(
                         ]
                     )                
                 )
-            ]
-        ), 
-        html.Div(
+            ])
+
+def build_input_container():
+    return html.Div(
+        dbc.Container(
             [
-                dbc.Container(
-                    [
-                        html.H4('MyFitnessPal User', style={'marginTop': '25px'}),
-                        dbc.Row(
-                            dbc.Col(
-                                dbc.Input(
-                                    placeholder='Enter MFP Username...',
-                                    id='mfp-username', 
-                                    value='', 
-                                    type='text',
-                                    className='input-field'
-                                    ),
+                html.H4('MyFitnessPal User', style={'marginTop': '25px'}),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.Input(
+                            placeholder='Enter MFP Username...',
+                            id='mfp-username', 
+                            value='', 
+                            type='text',
+                            className='input-field'
                             ),
-                        ),
-                        dbc.Row(
-                            dbc.Col(
-                                dbc.Alert(
-                                    'Invalid Username',
-                                    id='dbc-validate-username',
-                                    color='primary',
-                                    dismissable=False,
-                                    fade=False,
-                                    is_open=False,
-                                    className='input-field'
-                                ), width = 4
-                            )
-                        ),
-                        dbc.Row(
-                            dbc.Col(
-                                dcc.DatePickerRange(
-                                    id='date-picker-range',
-                                    min_date_allowed=datetime(2017,1,1),
-                                    max_date_allowed=date.today(),
-                                    minimum_nights=2,
-                                    initial_visible_month=datetime(2020, 1, 1),
-                                    start_date=datetime(2020, 1, 4),
-                                    end_date=datetime(2020, 1, 10),
-                                    clearable=True
-                                ), width=4
-                            ), style={'marginTop': '10px'}
-                        ),
-                        dbc.Row(
-                            dbc.Col(
-                                dbc.Button(
-                                    'Submit', 
-                                    id='submit-button', 
-                                    className='submit-button'
-                                ), 
-                            width = 1), 
-                        style={'marginTop': '10px'}
-                        ),
-                    ]
-                )
+                    ),
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.Alert(
+                            'Invalid Username',
+                            id='dbc-validate-username',
+                            color='primary',
+                            dismissable=False,
+                            fade=False,
+                            is_open=False,
+                            className='input-field'
+                        ), width = 4
+                    )
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        dcc.DatePickerRange(
+                            id='date-picker-range',
+                            min_date_allowed=datetime(2017,1,1),
+                            max_date_allowed=date.today(),
+                            minimum_nights=2,
+                            initial_visible_month=datetime(2020, 1, 1),
+                            start_date=datetime(2020, 1, 4),
+                            end_date=datetime(2020, 1, 10),
+                            clearable=True
+                        ), width=4
+                    ), style={'marginTop': '10px'}
+                ),
+                dbc.Row(
+                    dbc.Col(
+                        dbc.Button(
+                            'Submit', 
+                            id='submit-button', 
+                            className='submit-button'
+                        ), 
+                    width = 1), 
+                style={'marginTop': '10px'}
+                ),
             ]
-        ),
-        html.Div(
+        )
+    )
+
+def build_pie_chart():
+    return html.Div(
+        children = [
+            dcc.Loading(id='loading-pie-chart', children = [
+                dcc.Graph(
+                    id='weekly-pie-chart',
+                    className='pie-chart',
+                    config={'displayModeBar': False},
+                    figure={}
+                )
+            ],
+            type='default'
+            ) 
+        ], className='pretty_container')
+
+def build_bar_chart():
+    return html.Div(
+        children=[
+            dcc.Loading(id='loading-bar-chart', children = [
+                dcc.Graph(
+                    id='weekly-bar-chart',
+                    config={'displayModeBar': False},
+                    figure={}
+                )
+            ],
+            type='default'
+            )
+        ], className='pretty_container')
+
+def build_calories_table():
+    return html.Div(
+        dcc.Loading(
+            id='loading-calories-table', 
+            children = [html.Div(id='calories-table')], 
+            type='default')
+        )
+def build_protein_table():
+    return html.Div(
+        dcc.Loading(
+            id='loading-protein-table', 
+            children = [html.Div(id='protein-table')], 
+            type='default')
+        )
+def build_carbs_table():
+    return html.Div(
+        dcc.Loading(
+            id='loading-carbs-table', 
+            children = [html.Div(id='carbs-table')], 
+            type='default')
+        )
+def build_fat_table():
+    return html.Div(
+        dcc.Loading(
+            id='loading-fat-table', 
+            children = [html.Div(id='fat-table')], 
+            type='default')
+        )
+
+def build_nutrition_container():
+    return html.Div(
             [
-                html.H4('Your Week at a Glance', style={'marginTop': 25, 'marginLeft': 205}, ),
                 dbc.Container(
-                    [                       
+                    [   
+                        dbc.Row(
+                            dbc.Col(
+                                html.H4('Your Week at a Glance', style={'marginTop': 25}),
+                            )
+                        ),                    
                         dbc.Row(
                             [
                                 dbc.Col(
                                     [
-                                        html.Div(
-                                            children = [
-                                                dcc.Loading(id='loading-pie-chart', children = [
-                                                    dcc.Graph(
-                                                        id='weekly-pie-chart',
-                                                        className='pie-chart',
-                                                        config={'displayModeBar': False},
-                                                        figure={}
-                                                    )
-                                                ],
-                                                type='default'
-                                                ) 
-                                            ], className='pretty_container',
-                                        ),
-                                        html.Div(
-                                            children=[
-                                                dcc.Loading(id='loading-bar-chart', children = [
-                                                    dcc.Graph(
-                                                        id='weekly-bar-chart',
-                                                        config={'displayModeBar': False},
-                                                        figure={}
-                                                    )
-                                                ],
-                                                type='default'
-                                                )
-                                            ], className='pretty_container',
-                                        )
+                                        build_pie_chart(),
+                                        build_bar_chart()
                                     ], width=6
                                 ),
                                 dbc.Col(
                                     [
                                         dbc.Container(
                                             [
-                                                html.Div(
-                                                    children = [
-                                                        dcc.Loading(id='loading-calories-table', children = [html.Div(id='calories-table')], type='default')
-                                                    ]
-                                                ),
-                                                html.Div(
-                                                    children = [
-                                                        dcc.Loading(id='loading-protein-table', children = [html.Div(id='protein-table')], type='default')
-                                                    ]
-                                                ),
-                                                html.Div(
-                                                    children = [
-                                                        dcc.Loading(id='loading-carbs-table', children = [html.Div(id='carbs-table')], type='default')
-                                                    ]
-                                                ),
-                                                html.Div(
-                                                    children = [
-                                                        dcc.Loading(id='loading-fat-table', children = [html.Div(id='fat-table')], type='default')
-                                                    ]
-                                                )
+                                                build_calories_table(),
+                                                build_protein_table(),
+                                                build_carbs_table(),
+                                                build_fat_table()
                                             ], className='pretty_container',
                                         )
                                     ], width=6
@@ -187,46 +210,55 @@ app.layout = html.Div(
                     ]
                 )                
             ]
+        )
+
+def build_line_plot_container():
+    return dbc.Container(
+        dbc.Row(
+            dbc.Col(
+                html.Div(
+                    dcc.Loading(id='loading-scatter-chart', 
+                        children = [
+                            dcc.Graph(
+                                id='week-at-a-glance',
+                                config={'displayModeBar': False},
+                                figure={}
+                            )
+                        ], type='default'
+                    )
+                )
+            )
+        ), className='line_pretty_container',
+    )
+
+def build_data_table_container():
+    return dbc.Container(
+        [
+        dbc.Row(
+            dbc.Col(
+                dcc.Dropdown(id='date-dropdown', multi=True),
+                width=10
+            )
         ),
+        dbc.Row(
+            dbc.Col(
+                html.Div(id='data-table'), 
+                width=12, 
+                className='line_pretty_container'  
+            )
+        )], className='line_pretty_container',
+    )
+
+app.layout = html.Div(
+    style={'backgroundColor': '#F2F2F2'},
+    children = [
+        build_banner(),
+        build_input_container(),
+        build_nutrition_container(),
         html.Div(
             [
-                dbc.Container(
-                    dbc.Row(
-                        dbc.Col(
-                            html.Div(
-                                children=[
-                                    dcc.Loading(id='loading-scatter-chart', children = [
-                                        dcc.Graph(
-                                            id='week-at-a-glance',
-                                            config={
-                                                'displayModeBar': False,
-                                            },
-                                            figure={}
-                                        )
-                                    ],
-                                    type='default'
-                                    )
-                                ]
-                            )
-                        )
-                    # ), style={'backgroundColor': '#F9F9F9', 'borderRadius': '5px', 'padding': '15px', 'position': 'relative', 'boxShadow': 'lightgrey'}
-                    ), className='line_pretty_container',
-                ),
-                dbc.Container(
-                    [
-                        dbc.Row(
-                            dbc.Col(
-                                dcc.Dropdown(id='date-dropdown', multi=True),
-                                width=10
-                            )
-                        ),
-                        dbc.Row(
-                            dbc.Col(
-                                html.Div(id='data-table'), width=12, className='line_pretty_container'  
-                            )
-                        ),
-                    ], className='line_pretty_container',
-                ), 
+                build_line_plot_container(),
+                build_data_table_container(), 
                 html.P(id='blank-space', style={'height': '300px'}),
                 html.Div(id='hidden-data', style={'display': 'none'})
             ]
@@ -241,7 +273,7 @@ app.layout = html.Div(
     state=[State('mfp-username', 'value')]
 )
 def check_username(click, username):
-    if not click:
+    if not click or not username:
         raise PreventUpdate
     valid = only_public_profiles.check_username(username)
     if valid:
@@ -264,7 +296,6 @@ def load_data(username, click, start_date, end_date):
         raise PreventUpdate
 
     if username != 'Invalid Username' and username != None:
-        print("username not invalid: %s" % username)
         # Convert ISO-8601 inputs to Strings
         start_date = datetime.strftime(
            datetime.fromisoformat(start_date), '%Y-%m-%d'
@@ -275,12 +306,9 @@ def load_data(username, click, start_date, end_date):
 
         user_exists, last_updated = update_db.db_check_user(username)
         if user_exists:
-            yesterday = datetime.strftime((date.today()-timedelta(1)), '%Y-%m-%d')
-            today = datetime.strftime((date.today()), '%Y-%m-%d')
-            if (last_updated != yesterday and last_updated != today):
+            if (last_updated != YESTERDAY and last_updated != TODAY):
                 print("last updated: %s" % last_updated)
                 # Update the database with the most recent entries
-                print("Scraping some of it")
                 update_db.insert_nutrition([username], last_updated)
         else:
             # Update the database with all entries
@@ -313,55 +341,35 @@ def plot_data(json_in):
                         'y': df_data.groupby('entry_date')['protein'].sum(),
                         'type': 'scatter', 
                         'name': 'Protein',
-                        'line': {
-                            'color': '#1C4E80',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#1C4E80'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': df_data.groupby('entry_date')['carbohydrates'].sum(),
                         'type': 'scatter', 
                         'name': 'Carbohydrates',
-                        'line': {
-                            'color': '#A5D8DD',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#A5D8DD'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': df_data.groupby('entry_date')['fat'].sum(),
                         'type': 'scatter', 
                         'name': 'Fat',
-                        'line': {
-                            'color': '#EA6A47',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#EA6A47'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': df_data.groupby('entry_date')['fiber'].sum(),
                         'type': 'scatter', 
                         'name': 'Fiber',
-                        'line': {
-                            'color': '#6AB187',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#6AB187'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
                         'y': df_data.groupby('entry_date')['sugar'].sum(),
                         'type': 'scatter', 
                         'name': 'Sugar',
-                        'line': {
-                            'color': '#7E909A',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#7E909A'}
                     }))
     fig.add_trace(go.Scatter({
                         'x': date_list, 
@@ -369,11 +377,7 @@ def plot_data(json_in):
                         'type': 'scatter', 
                         'name': 'Calories', 
                         'yaxis': 'y2',
-                        'line': {
-                            'color': '#202020',
-                            'shape': 'spline',
-                            'smoothing': 0.75
-                        }
+                        'line': {'color': '#202020'}
                     }))
     fig.update_layout(
                 yaxis={'title': 'Grams'}, 
